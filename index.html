@@ -1100,12 +1100,13 @@ function renderColorPicker(cid,hid,sel){
     '<div class="color-swatch'+(c===chosen?' selected':'')+'" style="background:'+c+'" onclick="window.pickColor('+i+',\''+cid+'\',\''+hid+'\')"></div>'
   ).join('');
 }
-window.pickColor=function(idx,cid,hid){
+function pickColor(idx,cid,hid){
   const color=PALETTE[idx];
   const hidEl=document.getElementById(hid);
   if(hidEl)hidEl.value=color;
   document.querySelectorAll('#'+cid+' .color-swatch').forEach((s,i)=>s.classList.toggle('selected',i===idx));
-};
+}
+window.pickColor=pickColor;
 
 // MODALS
 function openModal(type){
@@ -1276,12 +1277,13 @@ function renderParticipantPicker(selected){
   ).join(''):'<div style="font-size:13px;color:#aaa">Nenhum responsável cadastrado.</div>';
 }
 
-window.togglePart=function(idx){
+function togglePart(idx){
   const r=responsaveis[idx];if(!r)return;
   const i=selectedParticipants.indexOf(r.id);
   if(i>=0)selectedParticipants.splice(i,1);else selectedParticipants.push(r.id);
   renderParticipantPicker(selectedParticipants);
-};
+}
+window.togglePart=togglePart;
 
 function toggleParticipant(id){
   const i=selectedParticipants.indexOf(id);
@@ -1398,6 +1400,7 @@ window.addEventListener("app-init",()=>{
 });
 
 </script>
+
 
 
 
