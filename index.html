@@ -199,6 +199,15 @@ textarea.form-input{resize:vertical;min-height:60px}
 .cal-span.span-mid{border-radius:0}
 .cal-span.span-end{border-radius:0 4px 4px 0}
 
+.reun-participant-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;border:0.5px solid #ddd;background:transparent;cursor:pointer;font-size:12px;color:#666;white-space:nowrap}
+.reun-participant-chip.selected{background:#dbeafe;border-color:#93c5fd;color:#1e40af;font-weight:500}
+.reun-card{background:#fff;border:0.5px solid #e0e0e0;border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;border-left:4px solid #7F77DD;transition:border-color .15s}
+.reun-card:hover{border-color:#bbb}
+.reun-card-title{font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:4px}
+.reun-card-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.reun-badge{font-size:11px;padding:2px 7px;border-radius:10px;background:#f3f0ff;color:#5b21b6;font-weight:500}
+.gcal-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:8px;background:#e8f5e9;color:#2e7d32;border:0.5px solid #a5d6a7;cursor:pointer;text-decoration:none;margin-top:6px}
+.gcal-btn:hover{background:#c8e6c9}
 @media(max-width:600px){.cal-cell{min-height:50px;padding:3px}.cal-chip,.cal-span{font-size:9px}.hbtns .btn{font-size:12px;padding:5px 8px}.drawer{width:100%;max-width:100vw;border-left:none}}
 </style>
 </head>
@@ -242,6 +251,7 @@ textarea.form-input{resize:vertical;min-height:60px}
       <button class="btn" onclick="openModal('empresa')">+ Empresa</button>
       <button class="btn" onclick="openModal('projeto')">+ Projeto</button>
       <button class="btn" onclick="openModal('responsavel')">+ Responsável</button>
+      <button class="btn" onclick="openModal('reuniao')">+ Reunião</button>
       <button class="btn btn-primary" onclick="openModal('tarefa')">+ Nova tarefa</button>
     </div>
   </div>
@@ -260,6 +270,14 @@ textarea.form-input{resize:vertical;min-height:60px}
     <span class="chevron" id="concluded-chevron">&#9660;</span>
   </div>
   <div class="concluded-list" id="concluded-list" style="display:none"></div>
+  
+  <!-- REUNIÕES SECTION -->
+  <div id="reunioes-section" style="margin-top:1.5rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+      <span style="font-size:13px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:.04em">Reuniões</span>
+    </div>
+    <div id="reunioes-list"><div class="empty">Nenhuma reunião cadastrada.</div></div>
+  </div>
 </div>
 
 <!-- PAGE CALENDÁRIO -->
@@ -435,6 +453,43 @@ textarea.form-input{resize:vertical;min-height:60px}
   </div>
 </div>
 
+<!-- MODAL REUNIÃO -->
+<div id="modal-reuniao" class="modal-bg" style="display:none" onclick="closeBg('reuniao',event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-tabs-row">
+      <div class="modal-tab active" id="tab-reuniao-detalhes" onclick="switchReunTab('detalhes')">Detalhes</div>
+      <div class="modal-tab" id="tab-reuniao-log" onclick="switchReunTab('log')">Log</div>
+    </div>
+    <div class="modal-body">
+      <div id="tab-reuniao-body-detalhes">
+        <div class="modal-title" id="reuniao-modal-title">Nova reunião</div>
+        <div class="form-row"><label class="form-label">Título</label><input class="form-input" id="f-reun-title" placeholder="Ex: Alinhamento de projeto"/></div>
+        <div class="form-row"><label class="form-label">Descrição / Pauta</label><textarea class="form-input" id="f-reun-desc" placeholder="Assuntos a tratar..."></textarea></div>
+        <div class="form-row"><label class="form-label">Projeto (opcional)</label><select class="form-input" id="f-reun-proj"></select></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div class="form-row"><label class="form-label">Data</label><input class="form-input" type="date" id="f-reun-date"/></div>
+          <div class="form-row"><label class="form-label">Início</label><input class="form-input" type="time" id="f-reun-start"/></div>
+          <div class="form-row"><label class="form-label">Fim</label><input class="form-input" type="time" id="f-reun-end"/></div>
+        </div>
+        <div class="form-row"><label class="form-label">Local / Link</label><input class="form-input" id="f-reun-local" placeholder="Ex: Sala 2 ou https://meet.google.com/..."/></div>
+        <div class="form-row">
+          <label class="form-label">Participantes</label>
+          <div id="reun-participants-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px"></div>
+        </div>
+        <div id="reun-time-error" style="font-size:12px;color:#dc2626;margin-bottom:8px;display:none">O horário de fim deve ser após o início.</div>
+        <div class="modal-btns">
+          <button class="del-btn" id="reun-del-btn" onclick="deleteReuniao()" style="display:none">Excluir</button>
+          <button class="btn" onclick="closeModal('reuniao')">Cancelar</button>
+          <button class="btn btn-primary" onclick="saveReuniao()">Salvar</button>
+        </div>
+      </div>
+      <div id="tab-reuniao-body-log" style="display:none">
+        <div id="reuniao-log-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- #app-root -->
 
 <script type="module">
@@ -530,7 +585,7 @@ let editTaskId=null,editProjId=null,drawerTaskId=null;
 let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
 let clItems=[];
 
-function saveAll(){window._fbSave({empresas,projetos,responsaveis,tasks,logEntries});}
+function saveAll(){window._fbSave({empresas,projetos,responsaveis,tasks,logEntries,reunioes});}
 
 function addLog(type,detail,taskId){
   const u=nowUser();
@@ -635,6 +690,7 @@ function render(){
   cl.style.display=concludedOpen?"flex":"none";
   if(concludedOpen)cl.innerHTML=done.map(taskCardHTML).join("");
   renderLog();
+  renderReunioesPage();
 }
 
 function statCard(label,val,style,filter,current){
@@ -772,14 +828,11 @@ function renderDrawerComments(){
   const comments=(t&&t.comments)||[];
   const el=document.getElementById("chat-messages");
   el.innerHTML=comments.length?comments.map(c=>
-    '<div class="chat-msg"><div class="chat-msg-author">'+esc(c.author||"?")+'</div>'+esc(c.text)+'<div class="chat-msg-meta">'+fmtTs(c.ts)+'<button class="chat-del" data-delcmt="'+c.id+'">✕</button></div></div>'
+    '<div class="chat-msg"><div class="chat-msg-author">'+esc(c.author||"?")+'</div>'+esc(c.text)+'<div class="chat-msg-meta">'+fmtTs(c.ts)+'<button class="chat-del" onclick="deleteDrawerComment(\''+c.id+'\')">✕</button></div></div>'
   ).join(""):'<div class="empty" style="padding:2rem 0;font-size:12px">Nenhum comentário ainda.</div>';
   el.scrollTop=el.scrollHeight;
 }
-document.addEventListener("click",function(e){
-  const del=e.target.closest("[data-delcmt]");
-  if(del){deleteDrawerComment(del.dataset.delcmt);}
-});
+
 function addComment(){
   if(!drawerTaskId)return;
   const text=document.getElementById("chat-input").value.trim();if(!text)return;
@@ -821,13 +874,10 @@ function renderModalComments(){
       '<div style="font-size:11px;color:#888;font-weight:500;margin-bottom:2px">'+esc(c.author||"?")+'</div>'+
       '<div style="font-size:11px;color:#aaa;margin-bottom:4px">'+fmtTs(c.ts)+'</div>'+
       '<div style="font-size:13px;color:#333;line-height:1.5">'+esc(c.text)+'</div>'+
-      '<button style="font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;margin-top:4px;padding:0" data-delmodalcmt="'+c.id+'">Excluir</button>'+
+      '<button style="font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;margin-top:4px;padding:0" onclick="deleteModalComment(\''+c.id+'\')">Excluir</button>'+
       '</div>').join(""):'<div class="empty" style="padding:1rem 0">Nenhum comentário ainda.</div>';
 }
-document.addEventListener("click",function(e){
-  const del=e.target.closest("[data-delmodalcmt]");
-  if(del){deleteModalComment(del.dataset.delmodalcmt);}
-});
+
 function addModalComment(){
   if(!editTaskId)return;
   const text=document.getElementById("f-comment").value.trim();if(!text)return;
@@ -973,9 +1023,32 @@ function renderCal(){
     if(extra>0)inner+='<div style="font-size:9px;color:#aaa">+'+extra+" mais</div>";
     html+='<div class="cal-cell'+(isToday?" is-today":"")+'" data-date="'+dateStr+'" data-taskids="'+allIds.join(",")+'">'+inner+"</div>";
   }
+  // Add reunioes to calendar cells
+  reunioes.filter(r=>r.date).forEach(r=>{
+    const d=parseInt(r.date.split('-')[2]);
+    const mo=r.date.slice(0,7);
+    if(mo===calYear+'-'+(String(calMonth+1).padStart(2,'0'))&&d>=1&&d<=daysInMonth){
+      // find the cell in html and inject - we'll do it post-render
+    }
+  });
   const total=firstDay+daysInMonth,rem=total%7===0?0:7-(total%7);
   for(let d=1;d<=rem;d++)html+='<div class="cal-cell other-month"><div class="cal-date">'+d+"</div></div>";
   document.getElementById("cal-grid").innerHTML=html;
+  // Inject reuniao chips into calendar cells after render
+  reunioes.filter(r=>r.date).forEach(r=>{
+    const mo=r.date.slice(0,7);
+    if(mo!==calYear+'-'+(String(calMonth+1).padStart(2,'0')))return;
+    const cells=document.querySelectorAll('.cal-cell[data-date="'+r.date+'"]');
+    cells.forEach(cell=>{
+      const proj=getProjById(r.projId);
+      const color=proj&&proj.color?proj.color:'#7F77DD';
+      const chip=document.createElement('div');
+      chip.style.cssText='font-size:10px;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;background:'+hexAlpha(color,.15)+';color:'+color+';font-weight:500;border:0.5px solid '+hexAlpha(color,.3);
+      chip.textContent=(r.start?r.start+' ':'')+r.title;
+      chip.onclick=function(e){e.stopPropagation();openEditReuniao(r.id);};
+      cell.appendChild(chip);
+    });
+  });
 }
 
 document.addEventListener("click",function(e){
@@ -1020,18 +1093,29 @@ document.addEventListener("click",function(e){
 
 // COLOR PICKER
 function renderColorPicker(cid,hid,sel){
-  document.getElementById(cid).innerHTML=PALETTE.map(c=>
-    '<div class="color-swatch'+(c===sel?" selected":"")+'" style="background:'+c+'" data-pickid="'+hid+'" data-pickcolor="'+c+'"></div>').join("");
+  const current=document.getElementById(hid)?document.getElementById(hid).value:sel;
+  const chosen=current||sel;
+  document.getElementById(cid).innerHTML=
+    PALETTE.map(c=>'<div class="color-swatch'+(c===chosen?" selected":"")+'" style="background:'+c+'" onclick="pickColor(\''+cid+'\',\''+hid+'\',\''+c+'\')"></div>').join("")+
+    '<div style="display:flex;align-items:center;gap:6px;margin-top:6px;width:100%">'+
+    '<input type="text" id="'+cid+'-hex" value="'+chosen+'" placeholder="#000000" style="padding:4px 8px;border-radius:6px;border:0.5px solid #ccc;font-size:12px;width:90px;font-family:monospace" oninput="pickColorHex(\''+cid+'\',\''+hid+'\',this.value)"/>'+
+    '<div id="'+cid+'-preview" style="width:22px;height:22px;border-radius:50%;background:'+chosen+';border:0.5px solid #ccc;flex-shrink:0"></div>'+
+    '</div>';
 }
-document.addEventListener("click",function(e){
-  const sw=e.target.closest("[data-pickid]");
-  if(sw){
-    const hid=sw.dataset.pickid,color=sw.dataset.pickcolor;
-    document.getElementById(hid).value=color;
-    const cid=sw.closest(".color-picker-row").id;
-    document.querySelectorAll("#"+cid+" .color-swatch").forEach(s=>s.classList.toggle("selected",s.dataset.pickcolor===color));
+function pickColor(cid,hid,color){
+  document.getElementById(hid).value=color;
+  document.querySelectorAll("#"+cid+" .color-swatch").forEach(s=>s.classList.toggle("selected",s.style.background===color||rgbToHex(s.style.background)===color));
+  const hi=document.getElementById(cid+"-hex");if(hi)hi.value=color;
+  const pr=document.getElementById(cid+"-preview");if(pr)pr.style.background=color;
+}
+function pickColorHex(cid,hid,val){
+  const clean=val.trim();
+  if(/^#[0-9a-fA-F]{6}$/.test(clean)){
+    document.getElementById(hid).value=clean;
+    document.querySelectorAll("#"+cid+" .color-swatch").forEach(s=>s.classList.remove("selected"));
+    const pr=document.getElementById(cid+"-preview");if(pr)pr.style.background=clean;
   }
-});
+}
 
 // MODALS
 function openModal(type){
@@ -1045,19 +1129,16 @@ function openModal(type){
 function closeModal(type){document.getElementById("modal-"+type).style.display="none";}
 function closeBg(type,e){if(e.target===document.getElementById("modal-"+type))closeModal(type);}
 
-function renderEmpresaList(){document.getElementById("empresa-list").innerHTML=empresas.length?empresas.map(e=>'<div class="list-item"><div class="list-item-name">'+esc(e.name)+'</div><button class="list-item-del" data-delemp="'+e.id+'">Excluir</button></div>').join(""):'<div style="font-size:13px;color:#aaa;margin-bottom:8px">Nenhuma empresa cadastrada.</div>';}
-document.addEventListener("click",function(e){const b=e.target.closest("[data-delemp]");if(b)deleteEmpresa(b.dataset.delemp);});
+function renderEmpresaList(){document.getElementById("empresa-list").innerHTML=empresas.length?empresas.map(e=>'<div class="list-item"><div class="list-item-name">'+esc(e.name)+'</div><button class="list-item-del" onclick="deleteEmpresa(\''+e.id+'\')" >Excluir</button></div>').join(""):'<div style="font-size:13px;color:#aaa;margin-bottom:8px">Nenhuma empresa cadastrada.</div>';}
 function saveEmpresa(){const name=document.getElementById("f-empresa-name").value.trim();if(!name)return;empresas.push({id:"e"+Date.now(),name});document.getElementById("f-empresa-name").value="";saveAll();renderEmpresaList();}
 function deleteEmpresa(id){if(projetos.some(p=>p.companyId===id)){alert("Remova os projetos desta empresa primeiro.");return;}empresas=empresas.filter(e=>e.id!==id);saveAll();renderEmpresaList();}
 
-function renderRespList(){document.getElementById("responsavel-list").innerHTML=responsaveis.length?responsaveis.map(r=>'<div class="list-item"><div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:'+(r.color||"#7F77DD")+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#fff">'+initials(r.name)+'</div><div class="list-item-name">'+esc(r.name)+'</div></div><button class="list-item-del" data-delresp="'+r.id+'">Excluir</button></div>').join(""):'<div style="font-size:13px;color:#aaa;margin-bottom:8px">Nenhum responsável cadastrado.</div>';}
-document.addEventListener("click",function(e){const b=e.target.closest("[data-delresp]");if(b)deleteResp(b.dataset.delresp);});
+function renderRespList(){document.getElementById("responsavel-list").innerHTML=responsaveis.length?responsaveis.map(r=>'<div class="list-item"><div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:'+(r.color||"#7F77DD")+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#fff">'+initials(r.name)+'</div><div class="list-item-name">'+esc(r.name)+'</div></div><button class="list-item-del" onclick="deleteResp(\''+r.id+'\')">Excluir</button></div>').join(""):'<div style="font-size:13px;color:#aaa;margin-bottom:8px">Nenhum responsável cadastrado.</div>';}
 function saveResp(){const name=document.getElementById("f-resp-name").value.trim();if(!name)return;const color=document.getElementById("f-resp-color").value||"#7F77DD";responsaveis.push({id:"r"+Date.now(),name,color});document.getElementById("f-resp-name").value="";saveAll();renderRespList();}
 function deleteResp(id){if(tasks.some(t=>t.respId===id)){alert("Remova este responsável das tarefas antes.");return;}responsaveis=responsaveis.filter(r=>r.id!==id);saveAll();renderRespList();}
 
 function populateProjCompany(sel){const el=document.getElementById("f-proj-company");el.innerHTML=empresas.length?empresas.map(e=>'<option value="'+e.id+'">'+esc(e.name)+"</option>").join(""):'<option value="">— Nenhuma empresa cadastrada —</option>';if(sel)el.value=sel;}
-function renderProjetoList(){document.getElementById("projeto-list").innerHTML=projetos.length?projetos.map(p=>{const emp=getEmpresaById(p.companyId);return'<div class="list-item" style="cursor:pointer;border-left:3px solid '+(p.color||"#aaa")+'" data-editproj="'+p.id+'"><div><div class="list-item-name">'+esc(p.name)+'</div><div class="list-item-sub">'+(emp?esc(emp.name):"")+(p.desc?" · "+esc(p.desc.slice(0,40)):"")+'</div></div><span style="font-size:12px;color:#aaa">editar</span></div>';}).join(""):'<div style="font-size:13px;color:#aaa;margin-bottom:8px">Nenhum projeto cadastrado.</div>';}
-document.addEventListener("click",function(e){const b=e.target.closest("[data-editproj]");if(b)openEditProject(b.dataset.editproj);});
+function renderProjetoList(){document.getElementById("projeto-list").innerHTML=projetos.length?projetos.map(p=>{const emp=getEmpresaById(p.companyId);return'<div class="list-item" style="cursor:pointer;border-left:3px solid '+(p.color||"#aaa")+'" onclick="openEditProject(\''+p.id+'\')"><div><div class="list-item-name">'+esc(p.name)+'</div><div class="list-item-sub">'+(emp?esc(emp.name):"")+(p.desc?" · "+esc(p.desc.slice(0,40)):"")+'</div></div><span style="font-size:12px;color:#aaa">editar</span></div>';}).join(""):'<div style="font-size:13px;color:#aaa;margin-bottom:8px">Nenhum projeto cadastrado.</div>';}
 function saveProject(){const name=document.getElementById("f-proj-name").value.trim();if(!name)return;const companyId=document.getElementById("f-proj-company").value,desc=document.getElementById("f-proj-desc").value.trim(),color=document.getElementById("f-proj-color").value||"#378ADD";if(editProjId){projetos=projetos.map(p=>p.id===editProjId?{...p,name,desc,companyId,color}:p);}else{projetos.push({id:"p"+Date.now(),name,desc,companyId,color});}editProjId=null;document.getElementById("f-proj-name").value="";document.getElementById("f-proj-desc").value="";document.getElementById("proj-del-btn").style.display="none";document.getElementById("proj-modal-title").textContent="Projetos";saveAll();renderProjetoList();render();renderCal();}
 function openEditProject(id){const p=projetos.find(x=>x.id===id);if(!p)return;editProjId=id;document.getElementById("proj-modal-title").textContent="Editar projeto";document.getElementById("f-proj-name").value=p.name;document.getElementById("f-proj-desc").value=p.desc||"";populateProjCompany(p.companyId);document.getElementById("f-proj-color").value=p.color||"#378ADD";renderColorPicker("proj-color-picker","f-proj-color",p.color||"#378ADD");document.getElementById("proj-del-btn").style.display="block";}
 function deleteProject(){if(!editProjId)return;if(tasks.some(t=>t.projId===editProjId)){alert("Mova ou exclua as tarefas deste projeto antes.");return;}projetos=projetos.filter(p=>p.id!==editProjId);editProjId=null;saveAll();renderProjetoList();render();renderCal();closeModal("projeto");}
@@ -1119,13 +1200,209 @@ function deleteTask(){
   saveAll();closeModal("tarefa");render();renderCal();
 }
 
+
+// ======== REUNIÕES ========
+let reunioes = [];
+let editReunId = null;
+let selectedParticipants = [];
+
+function saveAllWithReun(){
+  window._fbSave({empresas,projetos,responsaveis,tasks,logEntries,reunioes});
+}
+
+function buildGCalLink(r){
+  if(!r.date||!r.start)return null;
+  const [y,m,d] = r.date.split('-');
+  const [sh,sm] = r.start.split(':');
+  const [eh,em] = (r.end||r.start).split(':');
+  const fmt = (Y,M,D,H,Min) => Y+M+D+'T'+H+Min+'00';
+  const startDt = fmt(y,m,d,sh,sm);
+  const endDt = fmt(y,m,d,eh,em);
+  const parts = [
+    'action=TEMPLATE',
+    'text='+encodeURIComponent(r.title||'Reunião'),
+    'dates='+startDt+'/'+endDt,
+    r.desc?'details='+encodeURIComponent(r.desc):'',
+    r.local?'location='+encodeURIComponent(r.local):'',
+  ].filter(Boolean);
+  return 'https://calendar.google.com/calendar/render?'+parts.join('&');
+}
+
+function fmtReunDate(r){
+  if(!r.date)return'';
+  const[y,m,d]=r.date.split('-');
+  return d+'/'+m+'/'+y+(r.start?' às '+r.start:'')+(r.end?' – '+r.end:'');
+}
+
+function renderReunioesPage(){
+  const el=document.getElementById('reunioes-list');if(!el)return;
+  if(!reunioes.length){el.innerHTML='<div class="empty">Nenhuma reunião cadastrada.</div>';return;}
+  const sorted=[...reunioes].sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
+  // filter by active project/empresa filters too
+  const filtered=sorted.filter(r=>{
+    if(filterProjs.length&&!filterProjs.includes(r.projId))return false;
+    if(filterEmpresas.length){const p=getProjById(r.projId);const emp=p?getEmpresaById(p.companyId):null;if(!emp||!filterEmpresas.includes(emp.id))return false;}
+    return true;
+  });
+  el.innerHTML=filtered.length?filtered.map(r=>{
+    const proj=getProjById(r.projId);
+    const participants=(r.participants||[]).map(id=>getRespById(id)).filter(Boolean);
+    const gcal=buildGCalLink(r);
+    const projColor=proj&&proj.color?proj.color:'#7F77DD';
+    const isPast=r.date&&r.date<todayStr();
+    return '<div class="reun-card" style="border-left-color:'+projColor+';'+(isPast?'opacity:0.6':'')+'" onclick="openEditReuniao(\''+r.id+'\')">'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'+
+      '<span style="font-size:10px;padding:1px 7px;border-radius:8px;background:'+hexAlpha(projColor,.12)+';color:'+projColor+';font-weight:500">Reunião</span>'+
+      '<span class="reun-card-title" style="font-size:14px;font-weight:500;color:#1a1a1a">'+esc(r.title)+'</span>'+
+      '</div>'+
+      '<div class="reun-card-meta">'+
+      '<span class="reun-badge">'+fmtReunDate(r)+'</span>'+
+      (proj?'<span class="sep">·</span><span class="meta-item">'+esc(proj.name)+'</span>':'')+
+      (r.local?'<span class="sep">·</span><span class="meta-item">'+esc(r.local)+'</span>':'')+
+      '</div>'+
+      (participants.length?'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">'+
+        participants.map(p=>'<span style="font-size:11px;padding:2px 7px;border-radius:10px;background:'+hexAlpha(p.color||'#7F77DD',.12)+';color:'+(p.color||'#7F77DD')+'">'+esc(p.name)+'</span>').join('')+
+        '</div>':'')+
+      (r.desc?'<div style="font-size:12px;color:#888;margin-top:5px;line-height:1.4">'+esc(r.desc)+'</div>':'')+
+      (gcal?'<a class="gcal-btn" href="'+gcal+'" target="_blank" onclick="event.stopPropagation()">'+
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'+
+        'Adicionar ao Google Agenda</a>':'')+
+      '</div>';
+  }).join(''):'<div class="empty">Nenhuma reunião cadastrada.</div>';
+}
+
+function populateReunProj(){
+  const el=document.getElementById('f-reun-proj');
+  el.innerHTML='<option value="">— Nenhum projeto —</option>'+
+    projetos.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join('');
+}
+
+function renderParticipantPicker(selected){
+  const el=document.getElementById('reun-participants-list');if(!el)return;
+  el.innerHTML=responsaveis.length?responsaveis.map(r=>
+    '<div class="reun-participant-chip'+(selected.includes(r.id)?' selected':'')+'" onclick="toggleParticipant(\''+r.id+'\')">'+
+    '<span style="width:8px;height:8px;border-radius:50%;background:'+(r.color||'#7F77DD')+';display:inline-block"></span>'+
+    esc(r.name)+'</div>'
+  ).join(''):'<div style="font-size:13px;color:#aaa">Nenhum responsável cadastrado.</div>';
+}
+
+function toggleParticipant(id){
+  const i=selectedParticipants.indexOf(id);
+  if(i>=0)selectedParticipants.splice(i,1);else selectedParticipants.push(id);
+  renderParticipantPicker(selectedParticipants);
+}
+
+function switchReunTab(tab){
+  ['detalhes','log'].forEach(t=>{
+    const te=document.getElementById('tab-reuniao-'+t);
+    const be=document.getElementById('tab-reuniao-body-'+t);
+    if(te)te.classList.toggle('active',t===tab);
+    if(be)be.style.display=t===tab?'block':'none';
+  });
+  if(tab==='log')renderReunLog();
+}
+
+function renderReunLog(){
+  const el=document.getElementById('reuniao-log-list');if(!el)return;
+  const entries=logEntries.filter(l=>l.reunId===editReunId);
+  const labels={reun_created:'Criada',reun_edited:'Editada',reun_deleted:'Excluída'};
+  el.innerHTML=entries.length?entries.map(l=>
+    '<div class="log-item"><div class="log-item-header">'+
+    '<span class="log-badge edited">'+(labels[l.type]||l.type)+'</span>'+
+    '<span class="log-user">'+esc(l.user)+'</span>'+
+    '<span class="log-time">'+fmtTs(l.ts)+'</span></div>'+
+    '<div class="log-detail">'+esc(l.detail)+'</div></div>'
+  ).join(''):'<div class="empty">Sem histórico.</div>';
+}
+
+function openModal_reuniao(){
+  editReunId=null;selectedParticipants=[];
+  document.getElementById('reuniao-modal-title').textContent='Nova reunião';
+  ['f-reun-title','f-reun-desc','f-reun-date','f-reun-start','f-reun-end','f-reun-local'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  document.getElementById('reun-del-btn').style.display='none';
+  document.getElementById('reun-time-error').style.display='none';
+  populateReunProj();
+  renderParticipantPicker([]);
+  switchReunTab('detalhes');
+  document.getElementById('modal-reuniao').style.display='flex';
+  setTimeout(()=>document.getElementById('f-reun-title').focus(),50);
+}
+
+function openEditReuniao(id){
+  const r=reunioes.find(x=>x.id===id);if(!r)return;
+  editReunId=id;
+  selectedParticipants=[...(r.participants||[])];
+  document.getElementById('reuniao-modal-title').textContent='Editar reunião';
+  document.getElementById('f-reun-title').value=r.title||'';
+  document.getElementById('f-reun-desc').value=r.desc||'';
+  document.getElementById('f-reun-date').value=r.date||'';
+  document.getElementById('f-reun-start').value=r.start||'';
+  document.getElementById('f-reun-end').value=r.end||'';
+  document.getElementById('f-reun-local').value=r.local||'';
+  document.getElementById('reun-del-btn').style.display='block';
+  document.getElementById('reun-time-error').style.display='none';
+  populateReunProj();
+  document.getElementById('f-reun-proj').value=r.projId||'';
+  renderParticipantPicker(selectedParticipants);
+  switchReunTab('detalhes');
+  document.getElementById('modal-reuniao').style.display='flex';
+}
+
+function saveReuniao(){
+  const title=document.getElementById('f-reun-title').value.trim();if(!title)return;
+  const start=document.getElementById('f-reun-start').value;
+  const end=document.getElementById('f-reun-end').value;
+  const errEl=document.getElementById('reun-time-error');
+  if(start&&end&&end<=start){errEl.style.display='block';return;}
+  errEl.style.display='none';
+  const u=nowUser();
+  const isNew=!editReunId;
+  const reun={
+    id:editReunId||'reun'+Date.now(),
+    title,
+    desc:document.getElementById('f-reun-desc').value.trim(),
+    projId:document.getElementById('f-reun-proj').value||null,
+    date:document.getElementById('f-reun-date').value,
+    start,end,
+    local:document.getElementById('f-reun-local').value.trim(),
+    participants:[...selectedParticipants],
+    createdBy:u.email,
+    createdAt:isNew?Date.now():(reunioes.find(x=>x.id===editReunId)||{}).createdAt||Date.now()
+  };
+  if(isNew){
+    reunioes=[...reunioes,reun];
+    logEntries.unshift({id:'l'+Date.now(),type:'reun_created',detail:'Reunião criada: '+title,reunId:reun.id,user:u.name,email:u.email,ts:Date.now()});
+  } else {
+    reunioes=reunioes.map(r=>r.id===editReunId?reun:r);
+    logEntries.unshift({id:'l'+Date.now(),type:'reun_edited',detail:'Reunião editada: '+title,reunId:reun.id,user:u.name,email:u.email,ts:Date.now()});
+  }
+  saveAllWithReun();
+  closeModal('reuniao');
+  renderReunioesPage();
+  renderCal();
+}
+
+function deleteReuniao(){
+  if(!editReunId)return;
+  const r=reunioes.find(x=>x.id===editReunId);
+  logEntries.unshift({id:'l'+Date.now(),type:'reun_deleted',detail:'Reunião excluída: '+(r?r.title:''),reunId:editReunId,user:nowUser().name,email:nowUser().email,ts:Date.now()});
+  reunioes=reunioes.filter(r=>r.id!==editReunId);
+  saveAllWithReun();closeModal('reuniao');renderReunioesPage();renderCal();
+}
+// ======== FIM REUNIÕES ========
+
 window.addEventListener("app-init",()=>{
   const d=window._initialData||{empresas:[],projetos:[],responsaveis:[],tasks:[],logEntries:[]};
-  empresas=d.empresas||[];projetos=d.projetos||[];responsaveis=d.responsaveis||[];tasks=d.tasks||[];logEntries=d.logEntries||[];
+  empresas=d.empresas||[];projetos=d.projetos||[];responsaveis=d.responsaveis||[];tasks=d.tasks||[];logEntries=d.logEntries||[];reunioes=d.reunioes||[];
   render();renderCal();
 });
 
 </script>
+
+
+
 
 </div><!-- #app-root -->
 </body>
