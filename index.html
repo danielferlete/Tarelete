@@ -1093,29 +1093,18 @@ document.addEventListener("click",function(e){
 
 // COLOR PICKER
 function renderColorPicker(cid,hid,sel){
-  const current=document.getElementById(hid)?document.getElementById(hid).value:sel;
-  const chosen=current||sel;
-  document.getElementById(cid).innerHTML=
-    PALETTE.map(c=>'<div class="color-swatch'+(c===chosen?" selected":"")+'" style="background:'+c+'" onclick="pickColor(\''+cid+'\',\''+hid+'\',\''+c+'\')"></div>').join("")+
-    '<div style="display:flex;align-items:center;gap:6px;margin-top:6px;width:100%">'+
-    '<input type="text" id="'+cid+'-hex" value="'+chosen+'" placeholder="#000000" style="padding:4px 8px;border-radius:6px;border:0.5px solid #ccc;font-size:12px;width:90px;font-family:monospace" oninput="pickColorHex(\''+cid+'\',\''+hid+'\',this.value)"/>'+
-    '<div id="'+cid+'-preview" style="width:22px;height:22px;border-radius:50%;background:'+chosen+';border:0.5px solid #ccc;flex-shrink:0"></div>'+
-    '</div>';
+  const chosen=document.getElementById(hid)?document.getElementById(hid).value||sel:sel;
+  document.getElementById(cid).innerHTML=PALETTE.map(c=>
+    '<div class="color-swatch'+(c===chosen?' selected':'')+'" style="background:'+c+'" data-pickcid="'+cid+'" data-pickhid="'+hid+'" data-pickc="'+c+'"></div>'
+  ).join('');
 }
-function pickColor(cid,hid,color){
+document.addEventListener('click',function(e){
+  const sw=e.target.closest('[data-pickcid]');
+  if(!sw)return;
+  const cid=sw.dataset.pickcid,hid=sw.dataset.pickhid,color=sw.dataset.pickc;
   document.getElementById(hid).value=color;
-  document.querySelectorAll("#"+cid+" .color-swatch").forEach(s=>s.classList.toggle("selected",s.style.background===color||rgbToHex(s.style.background)===color));
-  const hi=document.getElementById(cid+"-hex");if(hi)hi.value=color;
-  const pr=document.getElementById(cid+"-preview");if(pr)pr.style.background=color;
-}
-function pickColorHex(cid,hid,val){
-  const clean=val.trim();
-  if(/^#[0-9a-fA-F]{6}$/.test(clean)){
-    document.getElementById(hid).value=clean;
-    document.querySelectorAll("#"+cid+" .color-swatch").forEach(s=>s.classList.remove("selected"));
-    const pr=document.getElementById(cid+"-preview");if(pr)pr.style.background=clean;
-  }
-}
+  document.querySelectorAll('#'+cid+' .color-swatch').forEach(s=>s.classList.toggle('selected',s.dataset.pickc===color));
+});
 
 // MODALS
 function openModal(type){
@@ -1404,6 +1393,7 @@ window.addEventListener("app-init",()=>{
 });
 
 </script>
+
 
 
 
