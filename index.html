@@ -504,8 +504,8 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 </script>
-
 <script>
+
 const PALETTE=["#378ADD","#1D9E75","#D85A30","#D4537E","#7F77DD","#E6A817","#7c3aed","#0f766e","#be123c","#15803d","#475569","#c2410c","#0369a1","#4d7c0f","#9333ea"];
 const PRIO_COLORS={alta:"#ef4444",media:"#f59e0b",baixa:"#22c55e"};
 const MONTHS=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -518,8 +518,9 @@ function todayStr(){return new Date().toISOString().slice(0,10);}
 function daysDiff(d){if(!d)return null;return Math.round((new Date(d+"T00:00:00")-new Date(todayStr()+"T00:00:00"))/864e5);}
 function prioOrder(p){return p==="alta"?0:p==="media"?1:2;}
 function fmtTs(ts){const d=new Date(ts);return d.toLocaleDateString("pt-BR")+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});}
-function dot(color){return'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+color+';flex-shrink:0"></span>';}
+function dot(color){return '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+color+';flex-shrink:0"></span>';}
 function nowUser(){return window._currentUser||{email:"?",name:"?"};}
+function h(tag,attrs,inner){return "<"+tag+" "+attrs+">"+inner+"</"+tag+">";}
 
 let empresas=[],projetos=[],responsaveis=[],tasks=[],logEntries=[];
 let filterEmpresas=[],filterProjs=[],filterResps=[];
@@ -527,11 +528,9 @@ let calFilterEmpresa="all",calFilterProj="all",calFilterResp="all";
 let statFilter="all",sortMode="prio",concludedOpen=false;
 let editTaskId=null,editProjId=null,drawerTaskId=null;
 let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
-let clItems=[]; // checklist items being edited
+let clItems=[];
 
-function saveAll(){
-  window._fbSave({empresas,projetos,responsaveis,tasks,logEntries});
-}
+function saveAll(){window._fbSave({empresas,projetos,responsaveis,tasks,logEntries});}
 
 function addLog(type,detail,taskId){
   const u=nowUser();
@@ -548,13 +547,13 @@ function getEmpresaOfTask(t){const p=getProjById(t.projId);return p?getEmpresaBy
 function fmtDateMeta(t){
   if(!t.date)return"";
   const diff=daysDiff(t.date);const[y,m,dd]=t.date.split("-");const label=dd+"/"+m;
-  let dateHTML="";
-  if(diff<0)dateHTML='<span class="meta-item overdue-label">'+label+" · atrasado "+Math.abs(diff)+"d</span>";
-  else if(diff===0)dateHTML='<span class="meta-item today-label">Hoje</span>';
-  else if(diff<=3)dateHTML='<span class="meta-item today-label">'+label+" · "+diff+"d</span>";
-  else dateHTML='<span class="meta-item">'+label+"</span>";
-  if(t.startDate&&t.date&&t.startDate!==t.date){const[sy,sm,sd]=t.startDate.split("-");dateHTML='<span class="meta-item">'+sd+"/"+sm+"</span>"+'<span class="meta-item" style="color:#ccc">→</span>'+dateHTML;}
-  return dateHTML;
+  let s="";
+  if(diff<0)s='<span class="meta-item overdue-label">'+label+" · atrasado "+Math.abs(diff)+"d</span>";
+  else if(diff===0)s='<span class="meta-item today-label">Hoje</span>';
+  else if(diff<=3)s='<span class="meta-item today-label">'+label+" · "+diff+"d</span>";
+  else s='<span class="meta-item">'+label+"</span>";
+  if(t.startDate&&t.date&&t.startDate!==t.date){const[sy,sm,sd]=t.startDate.split("-");s='<span class="meta-item">'+sd+"/"+sm+'</span><span class="sep">→</span>'+s;}
+  return s;
 }
 
 function matchesFilters(t){
@@ -564,13 +563,11 @@ function matchesFilters(t){
   if(filterResps.length&&!filterResps.includes(t.respId))return false;
   return true;
 }
-
 function applyStatFilter(list){
   if(statFilter==="today")return list.filter(t=>t.date&&daysDiff(t.date)===0);
   if(statFilter==="overdue")return list.filter(t=>t.date&&daysDiff(t.date)<0);
   return list;
 }
-
 function sortedTasks(list){
   return[...list].sort((a,b)=>{
     if(sortMode==="prio")return prioOrder(a.prio)-prioOrder(b.prio)||(a.date||"z").localeCompare(b.date||"z");
@@ -579,24 +576,17 @@ function sortedTasks(list){
     return 0;
   });
 }
-
 function setSort(mode){
   sortMode=mode;
   ["prio","date-asc","date-desc"].forEach(m=>document.getElementById("sort-"+m).classList.toggle("active",m===mode));
   render();
 }
-
-function toggleFilter(arr,val){
-  const idx=arr.indexOf(val);
-  if(idx>=0)arr.splice(idx,1); else arr.push(val);
-}
-
+function toggleFilter(arr,val){const i=arr.indexOf(val);if(i>=0)arr.splice(i,1);else arr.push(val);}
 function setFE(v){toggleFilter(filterEmpresas,v);filterProjs=[];filterResps=[];render();}
 function setFP(v){toggleFilter(filterProjs,v);render();}
 function setFR(v){toggleFilter(filterResps,v);render();}
 function toggleStatFilter(f){statFilter=(statFilter===f?"all":f);render();}
 
-// ---- RENDER ----
 function render(){
   const open=tasks.filter(t=>!t.done);
   const done=tasks.filter(t=>t.done);
@@ -604,10 +594,12 @@ function render(){
   const todayCount=filteredOpen.filter(t=>t.date&&daysDiff(t.date)===0).length;
   const overdueCount=filteredOpen.filter(t=>t.date&&daysDiff(t.date)<0).length;
 
-  document.getElementById("stats").innerHTML=
-    '<div class="stat'+(statFilter==="open"?" active-stat":"")+'" onclick="toggleStatFilter(\'open\')"><div class="stat-label">Em aberto</div><div class="stat-val">'+filteredOpen.length+'</div></div>'+
-    '<div class="stat'+(statFilter==="today"?" active-stat":"")+'" onclick="toggleStatFilter(\'today\')"><div class="stat-label">Para hoje</div><div class="stat-val" style="color:#d97706">'+todayCount+'</div></div>'+
-    '<div class="stat'+(statFilter==="overdue"?" active-stat":"")+'" onclick="toggleStatFilter(\'overdue\')"><div class="stat-label">Atrasadas</div><div class="stat-val" style="color:#dc2626">'+overdueCount+'</div></div>';
+  // stats - use data-filter attribute and event delegation
+  const statsEl=document.getElementById("stats");
+  statsEl.innerHTML=
+    statCard("Em aberto",filteredOpen.length,"","open",statFilter)+
+    statCard("Para hoje",todayCount,"color:#d97706","today",statFilter)+
+    statCard("Atrasadas",overdueCount,"color:#dc2626","overdue",statFilter);
 
   const openEmpIds=[...new Set(open.map(t=>{const e=getEmpresaOfTask(t);return e?e.id:null}).filter(Boolean))];
   const openProjIds=[...new Set(open.map(t=>t.projId).filter(Boolean))];
@@ -616,24 +608,24 @@ function render(){
   let fHTML="";
   if(openEmpIds.length){
     fHTML+='<div class="filter-row"><span class="filter-label">Empresa</span>';
-    openEmpIds.forEach(eid=>{const e=getEmpresaById(eid);if(!e)return;const act=filterEmpresas.includes(eid);fHTML+='<button class="chip'+(act?" active":"")+'" onclick="setFE(\'''+eid+'\')">'+esc(e.name)+'</button>';});
+    openEmpIds.forEach(eid=>{const e=getEmpresaById(eid);if(!e)return;fHTML+=chipBtn(esc(e.name),filterEmpresas.includes(eid),"setFE","e",eid);});
     fHTML+="</div>";
   }
   if(openProjIds.length){
     fHTML+='<div class="filter-row"><span class="filter-label">Projeto</span>';
-    openProjIds.forEach(pid=>{const p=getProjById(pid);if(!p)return;const act=filterProjs.includes(pid);fHTML+='<button class="chip'+(act?" active":"")+'" onclick="setFP(\'''+pid+'\')">'+dot(p.color||"#aaa")+esc(p.name)+'</button>';});
+    openProjIds.forEach(pid=>{const p=getProjById(pid);if(!p)return;fHTML+=chipBtn(dot(p.color||"#aaa")+esc(p.name),filterProjs.includes(pid),"setFP","p",pid);});
     fHTML+="</div>";
   }
   if(openRespIds.length){
     fHTML+='<div class="filter-row"><span class="filter-label">Responsável</span>';
-    openRespIds.forEach(rid=>{const r=getRespById(rid);if(!r)return;const act=filterResps.includes(rid);fHTML+='<button class="chip'+(act?" active":"")+'" onclick="setFR(\'''+rid+'\')">'+dot(r.color||"#7F77DD")+esc(r.name)+'</button>';});
+    openRespIds.forEach(rid=>{const r=getRespById(rid);if(!r)return;fHTML+=chipBtn(dot(r.color||"#7F77DD")+esc(r.name),filterResps.includes(rid),"setFR","r",rid);});
     fHTML+="</div>";
   }
   document.getElementById("filter-bar").innerHTML=fHTML;
 
   let visible=applyStatFilter(filteredOpen);
   visible=sortedTasks(visible);
-  document.getElementById("task-list").innerHTML=visible.length?visible.map(t=>taskCardHTML(t)).join(""):'<div class="empty">Nenhuma tarefa encontrada.</div>';
+  document.getElementById("task-list").innerHTML=visible.length?visible.map(taskCardHTML).join(""):'<div class="empty">Nenhuma tarefa encontrada.</div>';
 
   const bar=document.getElementById("concluded-bar");
   bar.style.display=done.length?"flex":"none";
@@ -641,22 +633,34 @@ function render(){
   document.getElementById("concluded-chevron").className="chevron"+(concludedOpen?" open":"");
   const cl=document.getElementById("concluded-list");
   cl.style.display=concludedOpen?"flex":"none";
-  if(concludedOpen)cl.innerHTML=done.map(t=>taskCardHTML(t)).join("");
-
+  if(concludedOpen)cl.innerHTML=done.map(taskCardHTML).join("");
   renderLog();
+}
+
+function statCard(label,val,style,filter,current){
+  const active=current===filter;
+  return '<div class="stat'+(active?" active-stat":"")+'" data-filter="'+filter+'"><div class="stat-label">'+label+'</div><div class="stat-val" style="'+style+'">'+val+'</div></div>';
+}
+document.addEventListener("click",function(e){
+  const stat=e.target.closest(".stat");
+  if(stat&&stat.dataset.filter){toggleStatFilter(stat.dataset.filter);}
+  const chip=e.target.closest(".chip[data-fn]");
+  if(chip){window[chip.dataset.fn](chip.dataset.id);}
+});
+
+function chipBtn(label,active,fn,prefix,id){
+  return '<button class="chip'+(active?" active":"")+'" data-fn="'+fn+'" data-id="'+id+'">'+label+'</button>';
 }
 
 function durationProgress(t){
   if(!t.startDate||!t.date)return null;
   const s=new Date(t.startDate+"T00:00:00"),e=new Date(t.date+"T00:00:00"),now=new Date();
-  const total=e-s; if(total<=0)return null;
+  const total=e-s;if(total<=0)return null;
   return Math.min(100,Math.max(0,Math.round((now-s)/total*100)));
 }
 
 function taskCardHTML(t){
-  const proj=getProjById(t.projId);
-  const empresa=proj?getEmpresaById(proj.companyId):null;
-  const resp=getRespById(t.respId);
+  const proj=getProjById(t.projId),empresa=proj?getEmpresaById(proj.companyId):null,resp=getRespById(t.respId);
   const projColor=proj&&proj.color?proj.color:"#e0e0e0";
   const respColor=resp&&resp.color?resp.color:"#7F77DD";
   const prioColor=PRIO_COLORS[t.prio]||"#aaa";
@@ -665,33 +669,57 @@ function taskCardHTML(t){
   const isMultiDay=t.startDate&&t.date&&t.startDate!==t.date;
   const cl=t.checklist||[];
   const clDone=cl.filter(c=>c.done).length;
-  const clTotal=cl.length;
 
-  return'<div class="task-card'+(t.done?" done":"")+'" style="border-left-color:'+projColor+'" onclick="openEditTask(\'''+t.id+'\')">'+
-    '<div class="task-top">'+
-    '<div class="check" style="border-color:'+projColor+';background:'+(t.done?projColor:"transparent")+'" onclick="event.stopPropagation();toggleDone(\'''+t.id+'\')">'+( t.done?"&#10003;":"")+'</div>'+
-    '<span class="task-name">'+esc(t.name)+'</span>'+
-    '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:10px;background:'+hexAlpha(prioColor,.12)+';color:'+prioColor+';white-space:nowrap;font-weight:500">'+
-    '<span style="width:6px;height:6px;border-radius:50%;background:'+prioColor+';display:inline-block"></span>'+
-    (t.prio==="alta"?"Alta":t.prio==="media"?"Média":"Baixa")+'</span>'+
-    '</div>'+
-    '<div class="task-meta">'+
-    (empresa?'<span class="company-tag" style="background:'+hexAlpha(projColor,.12)+';color:'+projColor+'">'+esc(empresa.name)+'</span>':"")+
-    (proj?'<span class="sep">·</span><span class="meta-item">'+esc(proj.name)+'</span>':"") +
-    (resp?'<span class="sep">·</span><span class="resp-pill"><span class="resp-dot" style="background:'+respColor+'"></span>'+esc(resp.name)+'</span>':"") +
-    (t.date?'<span class="sep">·</span>'+fmtDateMeta(t):"") +
-    (cmtCount?'<span class="sep">·</span><span class="meta-item" style="cursor:pointer" onclick="event.stopPropagation();openDrawer(\'''+t.id+'\')">&#128172; '+cmtCount+'</span>':"") +
-    (clTotal?'<span class="sep">·</span><span class="checklist-summary'+(clDone===clTotal?" done-all":"")+'">☑ '+clDone+"/"+clTotal+'</span>':"") +
-    '</div>'+
-    (t.desc?'<div style="font-size:12px;color:#888;margin-top:4px;margin-left:28px;line-height:1.4">'+esc(t.desc)+'</div>':"") +
-    (clTotal?'<div class="card-checklist">'+cl.slice(0,3).map(c=>
-      '<div class="card-cl-item'+(c.done?" checked":"")+'">'+
-      '<div class="card-cl-box'+(c.done?" checked":"")+'" onclick="event.stopPropagation();toggleCl(\'''+t.id+'\',\'''+c.id+'\')">'+( c.done?"✓":"")+'</div>'+
-      esc(c.text)+'</div>'
-    ).join("")+(cl.length>3?'<div style="font-size:11px;color:#aaa">+'+(cl.length-3)+' mais</div>':"")+'</div>':"") +
-    (isMultiDay&&prog!==null?'<div class="duration-bar"><div class="duration-fill" style="width:'+prog+'%;background:'+projColor+'"></div></div>':"") +
-    '</div>';
+  let html='<div class="task-card'+(t.done?" done":"")+'" style="border-left-color:'+projColor+'" data-taskid="'+t.id+'">';
+  html+='<div class="task-top">';
+  html+='<div class="check" style="border-color:'+projColor+';background:'+(t.done?projColor:"transparent")+'" data-checkid="'+t.id+'">'+(t.done?"&#10003;":"")+'</div>';
+  html+='<span class="task-name">'+esc(t.name)+'</span>';
+  html+='<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:10px;background:'+hexAlpha(prioColor,.12)+';color:'+prioColor+';white-space:nowrap;font-weight:500">';
+  html+='<span style="width:6px;height:6px;border-radius:50%;background:'+prioColor+';display:inline-block"></span>';
+  html+=(t.prio==="alta"?"Alta":t.prio==="media"?"Média":"Baixa")+'</span></div>';
+  html+='<div class="task-meta">';
+  if(empresa)html+='<span class="company-tag" style="background:'+hexAlpha(projColor,.12)+';color:'+projColor+'">'+esc(empresa.name)+'</span>';
+  if(proj)html+='<span class="sep">·</span><span class="meta-item">'+esc(proj.name)+'</span>';
+  if(resp)html+='<span class="sep">·</span><span class="resp-pill"><span class="resp-dot" style="background:'+respColor+'"></span>'+esc(resp.name)+'</span>';
+  if(t.date)html+='<span class="sep">·</span>'+fmtDateMeta(t);
+  if(cmtCount)html+='<span class="sep">·</span><span class="meta-item comment-link" data-drawerid="'+t.id+'">&#128172; '+cmtCount+'</span>';
+  if(cl.length)html+='<span class="sep">·</span><span class="checklist-summary'+(clDone===cl.length?" done-all":"")+'">☑ '+clDone+"/"+cl.length+'</span>';
+  html+='</div>';
+  if(t.desc)html+='<div style="font-size:12px;color:#888;margin-top:4px;margin-left:28px;line-height:1.4">'+esc(t.desc)+'</div>';
+  if(cl.length){
+    html+='<div class="card-checklist">';
+    cl.slice(0,3).forEach(c=>{
+      html+='<div class="card-cl-item'+(c.done?' checked':'')+'">'; 
+      html+='<div class="card-cl-box'+(c.done?" checked":"")+'" data-cltask="'+t.id+'" data-clid="'+c.id+'">'+(c.done?"✓":"")+'</div>';
+      html+=esc(c.text)+'</div>';
+    });
+    if(cl.length>3)html+='<div style="font-size:11px;color:#aaa">+'+(cl.length-3)+' mais</div>';
+    html+='</div>';
+  }
+  if(isMultiDay&&prog!==null)html+='<div class="duration-bar"><div class="duration-fill" style="width:'+prog+'%;background:'+projColor+'"></div></div>';
+  html+='</div>';
+  return html;
 }
+
+// Event delegation for task cards
+document.addEventListener("click",function(e){
+  // check button
+  const chk=e.target.closest("[data-checkid]");
+  if(chk&&!e.target.closest("[data-taskid]>.task-top>.task-name")){
+    e.stopPropagation();toggleDone(chk.dataset.checkid);return;
+  }
+  // comment link
+  const cmtLink=e.target.closest(".comment-link");
+  if(cmtLink){e.stopPropagation();openDrawer(cmtLink.dataset.drawerid);return;}
+  // checklist box
+  const clBox=e.target.closest("[data-cltask]");
+  if(clBox){e.stopPropagation();toggleCl(clBox.dataset.cltask,clBox.dataset.clid);return;}
+  // task card
+  const card=e.target.closest("[data-taskid]");
+  if(card&&!e.target.closest("[data-checkid]")&&!e.target.closest(".comment-link")&&!e.target.closest("[data-cltask]")){
+    openEditTask(card.dataset.taskid);
+  }
+});
 
 function toggleDone(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
@@ -700,38 +728,29 @@ function toggleDone(id){
   addLog(newDone?"completed":"reopened","Tarefa "+(newDone?"concluída":"reaberta")+": "+t.name,id);
   saveAll();render();renderCal();
 }
-
 function toggleCl(taskId,clId){
   tasks=tasks.map(t=>{
     if(t.id!==taskId)return t;
     const checklist=(t.checklist||[]).map(c=>c.id===clId?{...c,done:!c.done}:c);
     const item=checklist.find(c=>c.id===clId);
-    addLog("checklist","Checklist '"+(item?item.text:"")+"'  "+(item&&item.done?"marcado":"desmarcado"),taskId);
+    addLog("checklist","Checklist "+(item?'"'+item.text+'"':"")+" "+(item&&item.done?"marcado":"desmarcado"),taskId);
     return{...t,checklist};
   });
   saveAll();render();
 }
-
 function toggleConcluded(){concludedOpen=!concludedOpen;render();}
 
-// ---- LOG ----
 function renderLog(){
   const el=document.getElementById("log-list");if(!el)return;
+  const labels={created:"Criada",edited:"Editada",deleted:"Excluída",comment:"Comentário",checklist:"Checklist",completed:"Concluída",reopened:"Reaberta"};
+  const badges={created:"created",edited:"edited",deleted:"deleted",comment:"comment",checklist:"checklist",completed:"edited",reopened:"edited"};
   el.innerHTML=logEntries.length?logEntries.map(l=>{
-    const badge={created:"created",edited:"edited",deleted:"deleted",comment:"comment",checklist:"checklist",completed:"edited",reopened:"edited"}[l.type]||"edited";
-    const label={created:"Criada",edited:"Editada",deleted:"Excluída",comment:"Comentário",checklist:"Checklist",completed:"Concluída",reopened:"Reaberta"}[l.type]||l.type;
-    return'<div class="log-item">'+
-      '<div class="log-item-header">'+
-      '<span class="log-badge '+badge+'">'+label+'</span>'+
-      '<span class="log-user">'+esc(l.user)+'</span>'+
-      '<span class="log-time">'+fmtTs(l.ts)+'</span>'+
-      '</div>'+
-      '<div class="log-detail">'+esc(l.detail)+'</div>'+
-      '</div>';
+    const badge=badges[l.type]||"edited",label=labels[l.type]||l.type;
+    return '<div class="log-item"><div class="log-item-header"><span class="log-badge '+badge+'">'+label+'</span><span class="log-user">'+esc(l.user)+'</span><span class="log-time">'+fmtTs(l.ts)+'</span></div><div class="log-detail">'+esc(l.detail)+'</div></div>';
   }).join(""):'<div class="empty">Nenhuma alteração registrada ainda.</div>';
 }
 
-// ---- DRAWER ----
+// DRAWER
 function openDrawer(taskId){
   drawerTaskId=taskId;
   const t=tasks.find(x=>x.id===taskId);if(!t)return;
@@ -740,61 +759,57 @@ function openDrawer(taskId){
   const mp=[];if(proj)mp.push(proj.name);if(resp)mp.push(resp.name);if(t.date)mp.push("Prazo: "+t.date.split("-").reverse().slice(0,2).join("/"));
   document.getElementById("drawer-task-meta").textContent=mp.join(" · ");
   const descEl=document.getElementById("drawer-task-desc");
-  descEl.textContent=t.desc||""; descEl.style.display=t.desc?"block":"none";
+  descEl.textContent=t.desc||"";descEl.style.display=t.desc?"block":"none";
   renderDrawerComments();
   document.getElementById("drawer-overlay").classList.add("open");
   setTimeout(()=>document.getElementById("chat-input").focus(),300);
 }
 function closeDrawer(){document.getElementById("drawer-overlay").classList.remove("open");drawerTaskId=null;}
 function closeDrawerOnScrim(e){if(e.target===document.querySelector(".drawer-scrim"))closeDrawer();}
-
 function renderDrawerComments(){
   if(!drawerTaskId)return;
   const t=tasks.find(x=>x.id===drawerTaskId);
   const comments=(t&&t.comments)||[];
   const el=document.getElementById("chat-messages");
   el.innerHTML=comments.length?comments.map(c=>
-    '<div class="chat-msg">'+
-    '<div class="chat-msg-author">'+esc(c.author||"?")+'</div>'+
-    esc(c.text)+
-    '<div class="chat-msg-meta">'+fmtTs(c.ts)+'<button class="chat-del" onclick="deleteDrawerComment(\'''+c.id+'\')">✕</button></div>'+
-    '</div>').join(""):'<div class="empty" style="padding:2rem 0;font-size:12px">Nenhum comentário ainda.</div>';
+    '<div class="chat-msg"><div class="chat-msg-author">'+esc(c.author||"?")+'</div>'+esc(c.text)+'<div class="chat-msg-meta">'+fmtTs(c.ts)+'<button class="chat-del" data-delcmt="'+c.id+'">✕</button></div></div>'
+  ).join(""):'<div class="empty" style="padding:2rem 0;font-size:12px">Nenhum comentário ainda.</div>';
   el.scrollTop=el.scrollHeight;
 }
-
+document.addEventListener("click",function(e){
+  const del=e.target.closest("[data-delcmt]");
+  if(del){deleteDrawerComment(del.dataset.delcmt);}
+});
 function addComment(){
   if(!drawerTaskId)return;
   const text=document.getElementById("chat-input").value.trim();if(!text)return;
   const u=nowUser();
   const comment={id:"c"+Date.now(),text,ts:Date.now(),author:u.name,email:u.email};
   tasks=tasks.map(t=>{if(t.id!==drawerTaskId)return t;return{...t,comments:[...(t.comments||[]),comment]};});
-  addLog("comment","Comentário em '"+( tasks.find(x=>x.id===drawerTaskId)||{}).name+"': "+text,drawerTaskId);
+  const tn=(tasks.find(x=>x.id===drawerTaskId)||{}).name||"";
+  addLog("comment","Comentário em '"+tn+"': "+text,drawerTaskId);
   document.getElementById("chat-input").value="";
   autoGrow(document.getElementById("chat-input"));
   saveAll();renderDrawerComments();render();
 }
-
 function deleteDrawerComment(cid){
   tasks=tasks.map(t=>{if(t.id!==drawerTaskId)return t;return{...t,comments:(t.comments||[]).filter(c=>c.id!==cid)};});
   saveAll();renderDrawerComments();render();
 }
-
 function autoGrow(el){el.style.height="auto";el.style.height=Math.min(el.scrollHeight,100)+"px";}
 function chatKeydown(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();addComment();}}
 
-// ---- MODAL TABS ----
+// MODAL TABS
 function switchTab(tab){
   ["detalhes","checklist","comentarios","log-task"].forEach(t=>{
-    const tabEl=document.getElementById("tab-"+t);
-    const bodyEl=document.getElementById("tab-body-"+t);
-    if(tabEl)tabEl.classList.toggle("active",t===tab);
-    if(bodyEl)bodyEl.style.display=t===tab?"block":"none";
+    const te=document.getElementById("tab-"+t),be=document.getElementById("tab-body-"+t);
+    if(te)te.classList.toggle("active",t===tab);
+    if(be)be.style.display=t===tab?"block":"none";
   });
   if(tab==="comentarios")renderModalComments();
   if(tab==="log-task")renderTaskLog();
   if(tab==="checklist")renderClItems();
 }
-
 function renderModalComments(){
   if(!editTaskId){document.getElementById("modal-comments-list").innerHTML='<div class="empty">Salve a tarefa primeiro.</div>';return;}
   const t=tasks.find(x=>x.id===editTaskId);
@@ -806,64 +821,66 @@ function renderModalComments(){
       '<div style="font-size:11px;color:#888;font-weight:500;margin-bottom:2px">'+esc(c.author||"?")+'</div>'+
       '<div style="font-size:11px;color:#aaa;margin-bottom:4px">'+fmtTs(c.ts)+'</div>'+
       '<div style="font-size:13px;color:#333;line-height:1.5">'+esc(c.text)+'</div>'+
-      '<button style="font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;margin-top:4px;padding:0" onclick="deleteModalComment(\'''+c.id+'\')">Excluir</button>'+
+      '<button style="font-size:11px;color:#dc2626;background:none;border:none;cursor:pointer;margin-top:4px;padding:0" data-delmodalcmt="'+c.id+'">Excluir</button>'+
       '</div>').join(""):'<div class="empty" style="padding:1rem 0">Nenhum comentário ainda.</div>';
 }
-
+document.addEventListener("click",function(e){
+  const del=e.target.closest("[data-delmodalcmt]");
+  if(del){deleteModalComment(del.dataset.delmodalcmt);}
+});
 function addModalComment(){
   if(!editTaskId)return;
   const text=document.getElementById("f-comment").value.trim();if(!text)return;
   const u=nowUser();
   const comment={id:"c"+Date.now(),text,ts:Date.now(),author:u.name,email:u.email};
   tasks=tasks.map(t=>{if(t.id!==editTaskId)return t;return{...t,comments:[...(t.comments||[]),comment]};});
-  addLog("comment","Comentário em '"+(tasks.find(x=>x.id===editTaskId)||{}).name+"': "+text,editTaskId);
+  const tn=(tasks.find(x=>x.id===editTaskId)||{}).name||"";
+  addLog("comment","Comentário em '"+tn+"': "+text,editTaskId);
   document.getElementById("f-comment").value="";
   saveAll();renderModalComments();render();
 }
-
 function deleteModalComment(cid){
   tasks=tasks.map(t=>{if(t.id!==editTaskId)return t;return{...t,comments:(t.comments||[]).filter(c=>c.id!==cid)};});
   saveAll();renderModalComments();render();
 }
-
 function renderTaskLog(){
   const el=document.getElementById("task-log-list");if(!el)return;
   const entries=logEntries.filter(l=>l.taskId===editTaskId);
+  const labels={created:"Criada",edited:"Editada",deleted:"Excluída",comment:"Comentário",checklist:"Checklist",completed:"Concluída",reopened:"Reaberta"};
+  const badges={created:"created",edited:"edited",deleted:"deleted",comment:"comment",checklist:"checklist",completed:"edited",reopened:"edited"};
   el.innerHTML=entries.length?entries.map(l=>{
-    const badge={created:"created",edited:"edited",deleted:"deleted",comment:"comment",checklist:"checklist",completed:"edited",reopened:"edited"}[l.type]||"edited";
-    const label={created:"Criada",edited:"Editada",deleted:"Excluída",comment:"Comentário",checklist:"Checklist",completed:"Concluída",reopened:"Reaberta"}[l.type]||l.type;
-    return'<div class="log-item">'+
-      '<div class="log-item-header"><span class="log-badge '+badge+'">'+label+'</span><span class="log-user">'+esc(l.user)+'</span><span class="log-time">'+fmtTs(l.ts)+'</span></div>'+
-      '<div class="log-detail">'+esc(l.detail)+'</div></div>';
+    const badge=badges[l.type]||"edited",label=labels[l.type]||l.type;
+    return '<div class="log-item"><div class="log-item-header"><span class="log-badge '+badge+'">'+label+'</span><span class="log-user">'+esc(l.user)+'</span><span class="log-time">'+fmtTs(l.ts)+'</span></div><div class="log-detail">'+esc(l.detail)+'</div></div>';
   }).join(""):'<div class="empty">Sem histórico para esta tarefa.</div>';
 }
 
-// ---- CHECKLIST ----
+// CHECKLIST
 function renderClItems(){
   const el=document.getElementById("cl-items-list");if(!el)return;
   el.innerHTML=clItems.map((c,i)=>
     '<div class="cl-item-row">'+
-    '<input class="cl-item-input" value="'+esc(c.text)+'" placeholder="Item do checklist" oninput="clItems['+i+'].text=this.value"/>'+
-    '<button class="cl-remove" onclick="removeClItem('+i+')">×</button>'+
+    '<input class="cl-item-input" value="'+esc(c.text)+'" placeholder="Item do checklist" data-clindex="'+i+'"/>'+
+    '<button class="cl-remove" data-rmcl="'+i+'">×</button>'+
     '</div>').join("");
   const badge=document.getElementById("cl-badge");
   if(badge)badge.textContent=clItems.length?"("+clItems.length+")":"";
 }
-
+document.addEventListener("input",function(e){
+  const inp=e.target.closest("[data-clindex]");
+  if(inp)clItems[parseInt(inp.dataset.clindex)].text=inp.value;
+});
+document.addEventListener("click",function(e){
+  const rm=e.target.closest("[data-rmcl]");
+  if(rm){clItems.splice(parseInt(rm.dataset.rmcl),1);renderClItems();}
+});
 function addClItem(){
   clItems.push({id:"ci"+Date.now(),text:"",done:false});
   renderClItems();
-  // focus last input
   const inputs=document.querySelectorAll(".cl-item-input");
   if(inputs.length)inputs[inputs.length-1].focus();
 }
 
-function removeClItem(i){
-  clItems.splice(i,1);
-  renderClItems();
-}
-
-// ---- CALENDAR ----
+// CALENDAR
 function showPage(p,el){
   document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
   document.querySelectorAll(".nav-tab").forEach(x=>x.classList.remove("active"));
@@ -872,7 +889,6 @@ function showPage(p,el){
   if(p==="calendario")renderCal();
   if(p==="log")renderLog();
 }
-
 function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal();}
 function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal();}
 
@@ -880,16 +896,26 @@ function renderCal(){
   document.getElementById("cal-title").textContent=MONTHS[calMonth]+" "+calYear;
   const tStr=todayStr();
   const open=tasks.filter(t=>!t.done&&t.date);
-
-  // cal filters (single select for simplicity)
   const calEmpIds=[...new Set(open.map(t=>{const e=getEmpresaOfTask(t);return e?e.id:null}).filter(Boolean))];
   const calProjIds=[...new Set(open.map(t=>t.projId).filter(Boolean))];
   const calRespIds=[...new Set(open.map(t=>t.respId).filter(Boolean))];
 
   let cfHTML="";
-  if(calEmpIds.length){cfHTML+='<div class="filter-row"><span class="filter-label">Empresa</span><button class="chip'+(calFilterEmpresa==="all"?" active":"")+'" onclick="setCalFE(\'all\')">Todas</button>';calEmpIds.forEach(eid=>{const e=getEmpresaById(eid);if(!e)return;cfHTML+='<button class="chip'+(calFilterEmpresa===eid?" active":"")+'" onclick="setCalFE(\'''+eid+'\')">'+esc(e.name)+'</button>';});cfHTML+="</div>";}
-  if(calProjIds.length){cfHTML+='<div class="filter-row"><span class="filter-label">Projeto</span><button class="chip'+(calFilterProj==="all"?" active":"")+'" onclick="setCalFP(\'all\')">Todos</button>';calProjIds.forEach(pid=>{const p=getProjById(pid);if(!p)return;cfHTML+='<button class="chip'+(calFilterProj===pid?" active":"")+'" onclick="setCalFP(\'''+pid+'\')">'+dot(p.color||"#aaa")+esc(p.name)+'</button>';});cfHTML+="</div>";}
-  if(calRespIds.length){cfHTML+='<div class="filter-row"><span class="filter-label">Responsável</span><button class="chip'+(calFilterResp==="all"?" active":"")+'" onclick="setCalFR(\'all\')">Todos</button>';calRespIds.forEach(rid=>{const r=getRespById(rid);if(!r)return;cfHTML+='<button class="chip'+(calFilterResp===rid?" active":"")+'" onclick="setCalFR(\'''+rid+'\')">'+dot(r.color||"#7F77DD")+esc(r.name)+'</button>';});cfHTML+="</div>";}
+  if(calEmpIds.length){
+    cfHTML+='<div class="filter-row"><span class="filter-label">Empresa</span><button class="chip'+(calFilterEmpresa==="all"?" active":"")+'" data-calfn="setCalFE" data-calid="all">Todas</button>';
+    calEmpIds.forEach(eid=>{const e=getEmpresaById(eid);if(!e)return;cfHTML+='<button class="chip'+(calFilterEmpresa===eid?" active":"")+'" data-calfn="setCalFE" data-calid="'+eid+'">'+esc(e.name)+'</button>';});
+    cfHTML+="</div>";
+  }
+  if(calProjIds.length){
+    cfHTML+='<div class="filter-row"><span class="filter-label">Projeto</span><button class="chip'+(calFilterProj==="all"?" active":"")+'" data-calfn="setCalFP" data-calid="all">Todos</button>';
+    calProjIds.forEach(pid=>{const p=getProjById(pid);if(!p)return;cfHTML+='<button class="chip'+(calFilterProj===pid?" active":"")+'" data-calfn="setCalFP" data-calid="'+pid+'">'+dot(p.color||"#aaa")+esc(p.name)+'</button>';});
+    cfHTML+="</div>";
+  }
+  if(calRespIds.length){
+    cfHTML+='<div class="filter-row"><span class="filter-label">Responsável</span><button class="chip'+(calFilterResp==="all"?" active":"")+'" data-calfn="setCalFR" data-calid="all">Todos</button>';
+    calRespIds.forEach(rid=>{const r=getRespById(rid);if(!r)return;cfHTML+='<button class="chip'+(calFilterResp===rid?" active":"")+'" data-calfn="setCalFR" data-calid="'+rid+'">'+dot(r.color||"#7F77DD")+esc(r.name)+'</button>';});
+    cfHTML+="</div>";
+  }
   document.getElementById("cal-filter-bar").innerHTML=cfHTML;
 
   function calMatches(t){
@@ -902,8 +928,6 @@ function renderCal(){
   const firstDay=new Date(calYear,calMonth,1).getDay();
   const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
   const daysInPrev=new Date(calYear,calMonth,0).getDate();
-
-  // build per-cell maps
   const deadlineMap={},spanMap={};
   for(let d=1;d<=daysInMonth;d++){deadlineMap[d]=[];spanMap[d]=[];}
 
@@ -918,8 +942,8 @@ function renderCal(){
       for(let d=1;d<=daysInMonth;d++){
         const cur=new Date(calYear,calMonth,d);
         if(cur>=s&&cur<=e){
-          const isStart=cur.toISOString().slice(0,10)===startDate;
-          const isEnd=cur.toISOString().slice(0,10)===endDate;
+          const ds=cur.toISOString().slice(0,10);
+          const isStart=ds===startDate,isEnd=ds===endDate;
           spanMap[d].push({t,isStart,isEnd,isMid:!isStart&&!isEnd});
         }
       }
@@ -934,32 +958,40 @@ function renderCal(){
   for(let d=1;d<=daysInMonth;d++){
     const dateStr=cellKey(d);
     const isToday=dateStr===tStr;
-    const allTasksForDay=[...spanMap[d].map(s=>s.t),...deadlineMap[d]];
+    const allIds=[...spanMap[d].map(s=>s.t.id),...deadlineMap[d].map(t=>t.id)];
     let inner='<div class="cal-date">'+d+"</div>";
-
     spanMap[d].slice(0,2).forEach(({t,isStart,isEnd,isMid})=>{
-      const c=getProjColor(t.projId);
-      const resp=getRespById(t.respId);const rc=resp&&resp.color?resp.color:"transparent";
+      const c=getProjColor(t.projId);const resp=getRespById(t.respId);const rc=resp&&resp.color?resp.color:"transparent";
       const cls="cal-span"+(isStart?" span-start":isEnd?" span-end":" span-mid");
-      inner+='<div class="'+cls+'" style="background:'+c+'" onclick="event.stopPropagation();openEditTask(\'''+t.id+'\')" title="'+esc(t.name)+'">'+
-        '<span class="cal-chip-resp" style="background:'+rc+'"></span>'+(isStart?esc(t.name):(isEnd?"⬤":""))+'</div>';
+      inner+='<div class="'+cls+'" style="background:'+c+'" data-caltask="'+t.id+'" title="'+esc(t.name)+'"><span class="cal-chip-resp" style="background:'+rc+'"></span>'+(isStart?esc(t.name):(isEnd?"⬤":""))+'</div>';
     });
     deadlineMap[d].slice(0,2).forEach(t=>{
-      const c=getProjColor(t.projId);
-      const resp=getRespById(t.respId);const rc=resp&&resp.color?resp.color:"transparent";
-      inner+='<div class="cal-chip" style="background:'+c+'" onclick="event.stopPropagation();openEditTask(\'''+t.id+'\')" title="'+esc(t.name)+'">'+
-        '<span class="cal-chip-resp" style="background:'+rc+'"></span>'+esc(t.name)+'</div>';
+      const c=getProjColor(t.projId);const resp=getRespById(t.respId);const rc=resp&&resp.color?resp.color:"transparent";
+      inner+='<div class="cal-chip" style="background:'+c+'" data-caltask="'+t.id+'" title="'+esc(t.name)+'"><span class="cal-chip-resp" style="background:'+rc+'"></span>'+esc(t.name)+'</div>';
     });
     const extra=(spanMap[d].length>2?spanMap[d].length-2:0)+(deadlineMap[d].length>2?deadlineMap[d].length-2:0);
     if(extra>0)inner+='<div style="font-size:9px;color:#aaa">+'+extra+" mais</div>";
-
-    html+='<div class="cal-cell'+(isToday?" is-today":"")+'" onclick="openDayModal(\'''+dateStr+'\',['+allTasksForDay.map(t=>"\'"+t.id+"\'").join(",")+'])">'+inner+"</div>";
+    html+='<div class="cal-cell'+(isToday?" is-today":"")+'" data-date="'+dateStr+'" data-taskids="'+allIds.join(",")+'">'+inner+"</div>";
   }
-
   const total=firstDay+daysInMonth,rem=total%7===0?0:7-(total%7);
   for(let d=1;d<=rem;d++)html+='<div class="cal-cell other-month"><div class="cal-date">'+d+"</div></div>";
   document.getElementById("cal-grid").innerHTML=html;
 }
+
+document.addEventListener("click",function(e){
+  // cal filter chips
+  const calChip=e.target.closest("[data-calfn]");
+  if(calChip){window[calChip.dataset.calfn](calChip.dataset.calid);return;}
+  // cal task chip click
+  const calTask=e.target.closest("[data-caltask]");
+  if(calTask){e.stopPropagation();openEditTask(calTask.dataset.caltask);return;}
+  // cal cell click → day modal
+  const calCell=e.target.closest(".cal-cell:not(.other-month)");
+  if(calCell&&calCell.dataset.date){
+    const ids=calCell.dataset.taskids?calCell.dataset.taskids.split(",").filter(Boolean):[];
+    if(ids.length)openDayModal(calCell.dataset.date,ids);
+  }
+});
 
 function setCalFE(v){calFilterEmpresa=v;renderCal();}
 function setCalFP(v){calFilterProj=v;renderCal();}
@@ -971,73 +1003,71 @@ function openDayModal(dateStr,taskIds){
   document.getElementById("day-modal-title").textContent=parseInt(d)+" de "+MONTHS[parseInt(m)-1]+" de "+y;
   const dayTasks=taskIds.map(id=>tasks.find(t=>t.id===id)).filter(Boolean);
   document.getElementById("day-task-list").innerHTML=dayTasks.map(t=>{
-    const proj=getProjById(t.projId);
-    const resp=getRespById(t.respId);
+    const proj=getProjById(t.projId),resp=getRespById(t.respId);
     const projColor=proj&&proj.color?proj.color:"#e0e0e0";
-    const cl=t.checklist||[];
-    const clDone=cl.filter(c=>c.done).length;
-    return'<div class="day-task-item" style="border-left-color:'+projColor+'" onclick="document.getElementById(\'modal-day\').style.display=\'none\';openEditTask(\'''+t.id+'\')">'+
+    const cl=t.checklist||[];const clDone=cl.filter(c=>c.done).length;
+    return '<div class="day-task-item" style="border-left-color:'+projColor+'" data-daytask="'+t.id+'">'+
       '<div class="day-task-name">'+esc(t.name)+'</div>'+
       '<div class="day-task-meta">'+(proj?esc(proj.name):"")+(resp?" · "+esc(resp.name):"")+(cl.length?" · ☑ "+clDone+"/"+cl.length:"")+'</div>'+
       '</div>';
   }).join("");
   document.getElementById("modal-day").style.display="flex";
 }
+document.addEventListener("click",function(e){
+  const dt=e.target.closest("[data-daytask]");
+  if(dt){document.getElementById("modal-day").style.display="none";openEditTask(dt.dataset.daytask);}
+});
 
-// ---- COLOR PICKER ----
+// COLOR PICKER
 function renderColorPicker(cid,hid,sel){
   document.getElementById(cid).innerHTML=PALETTE.map(c=>
-    '<div class="color-swatch'+(c===sel?" selected":"")+'" style="background:'+c+'" onclick="selectColor(\'''+cid+'\',\'''+hid+'\',\'''+c+'\')" ></div>').join("");
+    '<div class="color-swatch'+(c===sel?" selected":"")+'" style="background:'+c+'" data-pickid="'+hid+'" data-pickcolor="'+c+'"></div>').join("");
 }
-function selectColor(cid,hid,color){
-  document.getElementById(hid).value=color;
-  document.querySelectorAll("#"+cid+" .color-swatch").forEach(s=>{s.classList.toggle("selected",rgbToHex(s.style.background)===color);});
-}
-function rgbToHex(rgb){const m=rgb.match(/\d+/g);if(!m)return rgb;return"#"+m.slice(0,3).map(n=>parseInt(n).toString(16).padStart(2,"0")).join("");}
+document.addEventListener("click",function(e){
+  const sw=e.target.closest("[data-pickid]");
+  if(sw){
+    const hid=sw.dataset.pickid,color=sw.dataset.pickcolor;
+    document.getElementById(hid).value=color;
+    const cid=sw.closest(".color-picker-row").id;
+    document.querySelectorAll("#"+cid+" .color-swatch").forEach(s=>s.classList.toggle("selected",s.dataset.pickcolor===color));
+  }
+});
 
-// ---- MODALS ----
+// MODALS
 function openModal(type){
   if(type==="empresa"){renderEmpresaList();document.getElementById("f-empresa-name").value="";}
   if(type==="projeto"){editProjId=null;renderProjetoList();populateProjCompany();document.getElementById("f-proj-name").value="";document.getElementById("f-proj-desc").value="";document.getElementById("proj-del-btn").style.display="none";document.getElementById("proj-modal-title").textContent="Projetos";renderColorPicker("proj-color-picker","f-proj-color","#378ADD");document.getElementById("f-proj-color").value="#378ADD";}
   if(type==="responsavel"){renderRespList();document.getElementById("f-resp-name").value="";renderColorPicker("resp-color-picker","f-resp-color","#7F77DD");document.getElementById("f-resp-color").value="#7F77DD";}
-  if(type==="tarefa"){
-    editTaskId=null;clItems=[];
-    document.getElementById("task-modal-title").textContent="Nova tarefa";
-    ["f-name","f-task-desc","f-start-date","f-date"].forEach(id=>document.getElementById(id).value="");
-    document.getElementById("f-prio").value="media";
-    document.getElementById("task-del-btn").style.display="none";
-    document.getElementById("comment-count-badge").textContent="";
-    document.getElementById("cl-badge").textContent="";
-    document.getElementById("date-error").style.display="none";
-    populateProjSel();populateRespSel();switchTab("detalhes");
-  }
+  if(type==="tarefa"){editTaskId=null;clItems=[];document.getElementById("task-modal-title").textContent="Nova tarefa";["f-name","f-task-desc","f-start-date","f-date"].forEach(id=>document.getElementById(id).value="");document.getElementById("f-prio").value="media";document.getElementById("task-del-btn").style.display="none";document.getElementById("comment-count-badge").textContent="";document.getElementById("cl-badge").textContent="";document.getElementById("date-error").style.display="none";populateProjSel();populateRespSel();switchTab("detalhes");}
   document.getElementById("modal-"+type).style.display="flex";
   setTimeout(()=>{const m={empresa:"f-empresa-name",responsavel:"f-resp-name",tarefa:"f-name"};if(m[type])document.getElementById(m[type]).focus();},50);
 }
 function closeModal(type){document.getElementById("modal-"+type).style.display="none";}
 function closeBg(type,e){if(e.target===document.getElementById("modal-"+type))closeModal(type);}
 
-function renderEmpresaList(){document.getElementById("empresa-list").innerHTML=empresas.length?empresas.map(e=>'<div class="list-item"><div class="list-item-name">'+esc(e.name)+'</div><button class="list-item-del" onclick="deleteEmpresa(\'''+e.id+'\')">Excluir</button></div>').join(""):'<div style="font-size:13px;color:#aaa;margin-bottom:8px">Nenhuma empresa cadastrada.</div>';}
+function renderEmpresaList(){document.getElementById("empresa-list").innerHTML=empresas.length?empresas.map(e=>'<div class="list-item"><div class="list-item-name">'+esc(e.name)+'</div><button class="list-item-del" data-delemp="'+e.id+'">Excluir</button></div>').join(""):'<div style="font-size:13px;color:#aaa;margin-bottom:8px">Nenhuma empresa cadastrada.</div>';}
+document.addEventListener("click",function(e){const b=e.target.closest("[data-delemp]");if(b)deleteEmpresa(b.dataset.delemp);});
 function saveEmpresa(){const name=document.getElementById("f-empresa-name").value.trim();if(!name)return;empresas.push({id:"e"+Date.now(),name});document.getElementById("f-empresa-name").value="";saveAll();renderEmpresaList();}
 function deleteEmpresa(id){if(projetos.some(p=>p.companyId===id)){alert("Remova os projetos desta empresa primeiro.");return;}empresas=empresas.filter(e=>e.id!==id);saveAll();renderEmpresaList();}
 
-function renderRespList(){document.getElementById("responsavel-list").innerHTML=responsaveis.length?responsaveis.map(r=>'<div class="list-item"><div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:'+(r.color||"#7F77DD")+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#fff">'+initials(r.name)+'</div><div class="list-item-name">'+esc(r.name)+'</div></div><button class="list-item-del" onclick="deleteResp(\'''+r.id+'\')">Excluir</button></div>').join(""):'<div style="font-size:13px;color:#aaa;margin-bottom:8px">Nenhum responsável cadastrado.</div>';}
+function renderRespList(){document.getElementById("responsavel-list").innerHTML=responsaveis.length?responsaveis.map(r=>'<div class="list-item"><div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:'+(r.color||"#7F77DD")+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#fff">'+initials(r.name)+'</div><div class="list-item-name">'+esc(r.name)+'</div></div><button class="list-item-del" data-delresp="'+r.id+'">Excluir</button></div>').join(""):'<div style="font-size:13px;color:#aaa;margin-bottom:8px">Nenhum responsável cadastrado.</div>';}
+document.addEventListener("click",function(e){const b=e.target.closest("[data-delresp]");if(b)deleteResp(b.dataset.delresp);});
 function saveResp(){const name=document.getElementById("f-resp-name").value.trim();if(!name)return;const color=document.getElementById("f-resp-color").value||"#7F77DD";responsaveis.push({id:"r"+Date.now(),name,color});document.getElementById("f-resp-name").value="";saveAll();renderRespList();}
 function deleteResp(id){if(tasks.some(t=>t.respId===id)){alert("Remova este responsável das tarefas antes.");return;}responsaveis=responsaveis.filter(r=>r.id!==id);saveAll();renderRespList();}
 
-function populateProjCompany(sel){const el=document.getElementById("f-proj-company");el.innerHTML=empresas.length?empresas.map(e=>'<option value="'+e.id+'">'+esc(e.name)+"</option>").join(""):"<option value="">— Nenhuma empresa cadastrada —</option>";if(sel)el.value=sel;}
-function renderProjetoList(){document.getElementById("projeto-list").innerHTML=projetos.length?projetos.map(p=>{const emp=getEmpresaById(p.companyId);return'<div class="list-item" style="cursor:pointer;border-left:3px solid '+(p.color||"#aaa")+'" onclick="openEditProject(\'''+p.id+'\')">'+'<div><div class="list-item-name">'+esc(p.name)+'</div><div class="list-item-sub">'+(emp?esc(emp.name):"")+(p.desc?" · "+esc(p.desc.slice(0,40)):"")+'</div></div><span style="font-size:12px;color:#aaa">editar</span></div>';}).join(""):'<div style="font-size:13px;color:#aaa;margin-bottom:8px">Nenhum projeto cadastrado.</div>';}
+function populateProjCompany(sel){const el=document.getElementById("f-proj-company");el.innerHTML=empresas.length?empresas.map(e=>'<option value="'+e.id+'">'+esc(e.name)+"</option>").join(""):'<option value="">— Nenhuma empresa cadastrada —</option>';if(sel)el.value=sel;}
+function renderProjetoList(){document.getElementById("projeto-list").innerHTML=projetos.length?projetos.map(p=>{const emp=getEmpresaById(p.companyId);return'<div class="list-item" style="cursor:pointer;border-left:3px solid '+(p.color||"#aaa")+'" data-editproj="'+p.id+'"><div><div class="list-item-name">'+esc(p.name)+'</div><div class="list-item-sub">'+(emp?esc(emp.name):"")+(p.desc?" · "+esc(p.desc.slice(0,40)):"")+'</div></div><span style="font-size:12px;color:#aaa">editar</span></div>';}).join(""):'<div style="font-size:13px;color:#aaa;margin-bottom:8px">Nenhum projeto cadastrado.</div>';}
+document.addEventListener("click",function(e){const b=e.target.closest("[data-editproj]");if(b)openEditProject(b.dataset.editproj);});
 function saveProject(){const name=document.getElementById("f-proj-name").value.trim();if(!name)return;const companyId=document.getElementById("f-proj-company").value,desc=document.getElementById("f-proj-desc").value.trim(),color=document.getElementById("f-proj-color").value||"#378ADD";if(editProjId){projetos=projetos.map(p=>p.id===editProjId?{...p,name,desc,companyId,color}:p);}else{projetos.push({id:"p"+Date.now(),name,desc,companyId,color});}editProjId=null;document.getElementById("f-proj-name").value="";document.getElementById("f-proj-desc").value="";document.getElementById("proj-del-btn").style.display="none";document.getElementById("proj-modal-title").textContent="Projetos";saveAll();renderProjetoList();render();renderCal();}
 function openEditProject(id){const p=projetos.find(x=>x.id===id);if(!p)return;editProjId=id;document.getElementById("proj-modal-title").textContent="Editar projeto";document.getElementById("f-proj-name").value=p.name;document.getElementById("f-proj-desc").value=p.desc||"";populateProjCompany(p.companyId);document.getElementById("f-proj-color").value=p.color||"#378ADD";renderColorPicker("proj-color-picker","f-proj-color",p.color||"#378ADD");document.getElementById("proj-del-btn").style.display="block";}
 function deleteProject(){if(!editProjId)return;if(tasks.some(t=>t.projId===editProjId)){alert("Mova ou exclua as tarefas deste projeto antes.");return;}projetos=projetos.filter(p=>p.id!==editProjId);editProjId=null;saveAll();renderProjetoList();render();renderCal();closeModal("projeto");}
 
-function populateProjSel(sel){const el=document.getElementById("f-proj-sel");el.innerHTML=projetos.length?projetos.map(p=>{const emp=getEmpresaById(p.companyId);return'<option value="'+p.id+'"'+(sel===p.id?" selected":"")+'>'+esc(p.name)+(emp?" ("+esc(emp.name)+")":"")+'</option>';}).join(""):"<option value="">— Cadastre um projeto primeiro —</option>";}
-function populateRespSel(sel){const el=document.getElementById("f-resp-sel");el.innerHTML="<option value="">— Sem responsável —</option>"+responsaveis.map(r=>'<option value="'+r.id+'"'+(sel===r.id?" selected":"")+'>'+esc(r.name)+'</option>').join("");}
+function populateProjSel(sel){const el=document.getElementById("f-proj-sel");el.innerHTML=projetos.length?projetos.map(p=>{const emp=getEmpresaById(p.companyId);return'<option value="'+p.id+'"'+(sel===p.id?" selected":"")+'>'+esc(p.name)+(emp?" ("+esc(emp.name)+")":"")+' </option>';}).join(""):'<option value="">— Cadastre um projeto primeiro —</option>';}
+function populateRespSel(sel){const el=document.getElementById("f-resp-sel");el.innerHTML='<option value="">— Sem responsável —</option>'+responsaveis.map(r=>'<option value="'+r.id+'"'+(sel===r.id?" selected":"")+'>'+esc(r.name)+'</option>').join("");}
 
 function openEditTask(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
-  editTaskId=id;
-  clItems=JSON.parse(JSON.stringify(t.checklist||[]));
+  editTaskId=id;clItems=JSON.parse(JSON.stringify(t.checklist||[]));
   document.getElementById("task-modal-title").textContent="Editar tarefa";
   document.getElementById("f-name").value=t.name;
   document.getElementById("f-task-desc").value=t.desc||"";
@@ -1046,8 +1076,7 @@ function openEditTask(id){
   document.getElementById("f-prio").value=t.prio;
   document.getElementById("date-error").style.display="none";
   document.getElementById("task-del-btn").style.display="block";
-  const cmtCount=(t.comments||[]).length;
-  document.getElementById("comment-count-badge").textContent=cmtCount?"("+cmtCount+")":"";
+  document.getElementById("comment-count-badge").textContent=(t.comments||[]).length?"("+(t.comments||[]).length+")":"";
   document.getElementById("cl-badge").textContent=clItems.length?"("+clItems.length+")":"";
   populateProjSel(t.projId);populateRespSel(t.respId);
   switchTab("detalhes");
@@ -1059,53 +1088,27 @@ function saveTask(){
   const startDate=document.getElementById("f-start-date").value;
   const date=document.getElementById("f-date").value;
   const errEl=document.getElementById("date-error");
-
-  // Validate dates
-  if(startDate&&date&&date<startDate){
-    errEl.style.display="block";return;
-  }
+  if(startDate&&date&&date<startDate){errEl.style.display="block";return;}
   errEl.style.display="none";
-
-  // sync clItems text from inputs
+  // sync checklist text
   document.querySelectorAll(".cl-item-input").forEach((inp,i)=>{if(clItems[i])clItems[i].text=inp.value;});
   const cleanCl=clItems.filter(c=>c.text.trim());
-
   const existing=editTaskId?tasks.find(x=>x.id===editTaskId):null;
   const u=nowUser();
   const isNew=!editTaskId;
-  const task={
-    id:editTaskId||"t"+Date.now(),
-    name,
-    desc:document.getElementById("f-task-desc").value.trim(),
-    projId:document.getElementById("f-proj-sel").value,
-    respId:document.getElementById("f-resp-sel").value||null,
-    prio:document.getElementById("f-prio").value,
-    startDate:startDate||todayStr(),
-    date,
-    done:existing?existing.done||false:false,
-    comments:existing?existing.comments||[]:[],
-    checklist:cleanCl,
-    createdBy:existing?existing.createdBy:u.email,
-    createdAt:existing?existing.createdAt:Date.now()
-  };
-
-  if(isNew){
-    tasks=[...tasks,task];
-    addLog("created","Tarefa criada: "+name,task.id);
-  } else {
-    const old=existing;
-    tasks=tasks.map(t=>t.id===editTaskId?task:t);
-    // Build diff
+  const task={id:editTaskId||"t"+Date.now(),name,desc:document.getElementById("f-task-desc").value.trim(),projId:document.getElementById("f-proj-sel").value,respId:document.getElementById("f-resp-sel").value||null,prio:document.getElementById("f-prio").value,startDate:startDate||todayStr(),date,done:existing?existing.done||false:false,comments:existing?existing.comments||[]:[],checklist:cleanCl,createdBy:existing?existing.createdBy:u.email,createdAt:existing?existing.createdAt:Date.now()};
+  if(isNew){tasks=[...tasks,task];addLog("created","Tarefa criada: "+name,task.id);}
+  else{
     const changes=[];
-    if(old.name!==task.name)changes.push("nome: ""+old.name+"" → ""+task.name+""");
-    if(old.prio!==task.prio)changes.push("prioridade: "+old.prio+" → "+task.prio);
-    if(old.date!==task.date)changes.push("prazo: "+(old.date||"—")+" → "+(task.date||"—"));
-    if(old.projId!==task.projId)changes.push("projeto alterado");
-    if(old.respId!==task.respId)changes.push("responsável alterado");
+    if(existing.name!==task.name)changes.push('nome: "'+existing.name+'" → "'+task.name+'"');
+    if(existing.prio!==task.prio)changes.push("prioridade: "+existing.prio+" → "+task.prio);
+    if(existing.date!==task.date)changes.push("prazo: "+(existing.date||"—")+" → "+(task.date||"—"));
+    if(existing.projId!==task.projId)changes.push("projeto alterado");
+    if(existing.respId!==task.respId)changes.push("responsável alterado");
+    tasks=tasks.map(t=>t.id===editTaskId?task:t);
     addLog("edited","Editada: "+name+(changes.length?" ("+changes.join(", ")+")":""),task.id);
   }
-  editTaskId=task.id;
-  saveAll();render();renderCal();closeModal("tarefa");
+  editTaskId=task.id;saveAll();render();renderCal();closeModal("tarefa");
 }
 
 function deleteTask(){
@@ -1118,13 +1121,12 @@ function deleteTask(){
 
 window.addEventListener("app-init",()=>{
   const d=window._initialData||{empresas:[],projetos:[],responsaveis:[],tasks:[],logEntries:[]};
-  empresas=d.empresas||[];
-  projetos=d.projetos||[];
-  responsaveis=d.responsaveis||[];
-  tasks=d.tasks||[];
-  logEntries=d.logEntries||[];
+  empresas=d.empresas||[];projetos=d.projetos||[];responsaveis=d.responsaveis||[];tasks=d.tasks||[];logEntries=d.logEntries||[];
   render();renderCal();
 });
+
 </script>
+
+</div><!-- #app-root -->
 </body>
 </html>
