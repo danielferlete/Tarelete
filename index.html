@@ -1280,8 +1280,8 @@ function populateReunProj(){
 function renderParticipantPicker(selected){
   const el=document.getElementById('reun-participants-list');if(!el)return;
   el.innerHTML=responsaveis.length?responsaveis.map(r=>
-    '<div class="reun-participant-chip'+(selected.includes(r.id)?' selected':'')+'" onclick="toggleParticipant(\''+r.id+'\')">'+
-    '<span style="width:8px;height:8px;border-radius:50%;background:'+(r.color||'#7F77DD')+';display:inline-block"></span>'+
+    '<div class="reun-participant-chip'+(selected.includes(r.id)?' selected':'')+' data-partid="'+r.id+'">'+
+    '<span style="width:8px;height:8px;border-radius:50%;background:'+(r.color||'#7F77DD')+';display:inline-block;margin-right:4px"></span>'+
     esc(r.name)+'</div>'
   ).join(''):'<div style="font-size:13px;color:#aaa">Nenhum responsável cadastrado.</div>';
 }
@@ -1291,6 +1291,10 @@ function toggleParticipant(id){
   if(i>=0)selectedParticipants.splice(i,1);else selectedParticipants.push(id);
   renderParticipantPicker(selectedParticipants);
 }
+document.addEventListener('click',function(e){
+  const chip=e.target.closest('[data-partid]');
+  if(chip)toggleParticipant(chip.dataset.partid);
+});
 
 function switchReunTab(tab){
   ['detalhes','log'].forEach(t=>{
@@ -1400,6 +1404,7 @@ window.addEventListener("app-init",()=>{
 });
 
 </script>
+
 
 
 
