@@ -2005,7 +2005,7 @@ function applyViewFilter(list){
 var notas=[];
 var editNotaId=null;
 var selectedSharedIds=[];
-var notaFilterProj='';var notaFilterAtrib='';var notaSort='updated';
+var notaFilterEmp='';var notaFilterProj='';var notaFilterAtrib='';var notaSort='updated';
 
 function saveAllWithNotas(){
   window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,notas:notas});
@@ -2150,12 +2150,18 @@ function renderNotasPage(){
   var fb=document.getElementById('notas-filter-bar');
   if(fb){
     var allProjs=[...new Set(visible.map(function(n){return n.projId;}).filter(Boolean))];
+    var allEmps=[...new Set(allProjs.map(function(pid){var p=getProjById(pid);return p?p.companyId:null;}).filter(Boolean))];
     var allAtribs=[...new Set(visible.flatMap(function(n){
       var owner=atribuicoes.find(function(a){return a.email&&n.ownerEmail&&a.email.toLowerCase()===n.ownerEmail.toLowerCase();});
       var shared=(n.sharedWith||[]);
       return (owner?[owner.id]:[]).concat(shared);
     }))];
     var fHTML='';
+    if(allEmps.length){
+      fHTML+='<div class="filter-row"><span class="filter-label">Empresa</span>';
+      allEmps.forEach(function(eid){var e=getEmpresaById(eid);if(!e)return;fHTML+='<button class="chip'+(notaFilterEmp===eid?' active':'')+'" onclick="setNotaFilterEmp(\''+eid+'\')">'+esc(e.name)+'</button>';});
+      fHTML+='</div>';
+    }
     if(allProjs.length){
       fHTML+='<div class="filter-row"><span class="filter-label">Projeto</span>';
       allProjs.forEach(function(pid){var p=getProjById(pid);if(!p)return;fHTML+='<button class="chip'+(notaFilterProj===pid?' active':'')+'" onclick="setNotaFilterProj(\''+pid+'\')">'+dot(p.color||'#aaa')+esc(p.name)+'</button>';});
@@ -2170,6 +2176,7 @@ function renderNotasPage(){
   }
 
   // Apply filters
+  if(notaFilterEmp)visible=visible.filter(function(n){var p=getProjById(n.projId);return p&&p.companyId===notaFilterEmp;});
   if(notaFilterProj)visible=visible.filter(function(n){return n.projId===notaFilterProj;});
   if(notaFilterAtrib){
     visible=visible.filter(function(n){
@@ -2217,6 +2224,7 @@ function renderNotasPage(){
   el.innerHTML=html;
 }
 
+function setNotaFilterEmp(eid){notaFilterEmp=(notaFilterEmp===eid?'':eid);notaFilterProj='';renderNotasPage();}
 function setNotaFilterProj(pid){notaFilterProj=(notaFilterProj===pid?'':pid);renderNotasPage();}
 function setNotaFilterAtrib(aid){notaFilterAtrib=(notaFilterAtrib===aid?'':aid);renderNotasPage();}
 // ============================================================
