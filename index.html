@@ -1151,6 +1151,7 @@ function showPage(p,el){
   document.getElementById("page-"+p).classList.add("active");el.classList.add("active");
   if(p==="calendario")renderCal();
   if(p==="log")renderLog();
+  if(p==="notas")renderNotasPage();
 }
 function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal();}
 function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal();}
@@ -2005,7 +2006,6 @@ function deleteNota(){
 
 function getVisibleNotas(){
   var u=nowUser();
-  if(isAdmin())return notas;
   return notas.filter(function(n){
     // own notes
     if(n.ownerEmail&&n.ownerEmail.toLowerCase()===u.email.toLowerCase())return true;
