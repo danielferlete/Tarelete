@@ -156,6 +156,77 @@ textarea.form-input{resize:vertical;min-height:60px}
 .cl-popup-item{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:0.5px solid #f0f0f0;cursor:pointer}
 .cl-popup-item:hover{background:#f9f9f9;border-radius:6px}
 .cl-popup-item:last-child{border-bottom:none}
+
+:root {
+  --bg-primary:#f5f5f3;--bg-secondary:#fff;--bg-tertiary:#ececea;
+  --text-primary:#1a1a1a;--text-secondary:#666;--text-tertiary:#999;
+  --border:#e0e0e0;--border-light:#eee;--shadow:rgba(0,0,0,.08);
+  --nav-bg:#fff;--modal-bg:#fff;--input-bg:#fff;--chip-active:#fff;
+  --stat-bg:#ececea;--list-item-bg:#fafafa;--drawer-bg:#fff;
+  --chat-msg-bg:#dbeafe;--chat-msg-color:#1e3a5f;
+}
+html.dark {
+  --bg-primary:#111;--bg-secondary:#1a1a1a;--bg-tertiary:#222;
+  --text-primary:#f0f0f0;--text-secondary:#aaa;--text-tertiary:#666;
+  --border:#333;--border-light:#2a2a2a;--shadow:rgba(0,0,0,.4);
+  --nav-bg:#161616;--modal-bg:#1a1a1a;--input-bg:#222;--chip-active:#2a2a2a;
+  --stat-bg:#222;--list-item-bg:#1e1e1e;--drawer-bg:#1a1a1a;
+  --chat-msg-bg:#1e3a5f;--chat-msg-color:#dbeafe;
+}
+html.dark body{background:var(--bg-primary);color:var(--text-primary);}
+html.dark .nav{background:var(--nav-bg);border-color:var(--border);}
+html.dark .modal{background:var(--modal-bg);border-color:var(--border);}
+html.dark .modal-bg{background:rgba(0,0,0,.6);}
+html.dark .form-input{background:var(--input-bg);color:var(--text-primary);border-color:var(--border);}
+html.dark .task-card{background:var(--bg-secondary);border-color:var(--border);}
+html.dark .stat{background:var(--stat-bg);}
+html.dark .chip{border-color:var(--border);color:var(--text-secondary);}
+html.dark .chip.active{background:var(--chip-active);color:var(--text-primary);border-color:#555;}
+html.dark .concluded-bar{background:var(--bg-secondary);border-color:var(--border);}
+html.dark .reun-card{background:var(--bg-secondary);border-color:var(--border);}
+html.dark .drawer{background:var(--drawer-bg);border-color:var(--border);}
+html.dark .drawer-header{border-color:var(--border);}
+html.dark .chat-msg{background:var(--chat-msg-bg);color:var(--chat-msg-color);}
+html.dark .chat-input-row{border-color:var(--border);}
+html.dark .chat-textarea{background:var(--input-bg);color:var(--text-primary);border-color:var(--border);}
+html.dark .list-item{background:var(--list-item-bg);border-color:var(--border-light);}
+html.dark .cal-cell{background:var(--bg-secondary);border-color:var(--border);}
+html.dark .cal-cell.other-month{background:var(--bg-tertiary);}
+html.dark .log-item{background:var(--bg-secondary);border-color:var(--border-light);}
+html.dark .login-card{background:var(--modal-bg);border-color:var(--border);}
+html.dark .modal-tabs-row{border-color:var(--border);}
+html.dark .modal-tab{color:var(--text-secondary);}
+html.dark .modal-tab.active{color:var(--text-primary);}
+html.dark .divider{border-color:var(--border);}
+html.dark .btn{color:var(--text-primary);border-color:var(--border);}
+html.dark .btn:hover{background:var(--bg-tertiary);}
+html.dark .sort-btn{color:var(--text-secondary);border-color:var(--border);}
+html.dark .sort-btn.active{background:var(--chip-active);color:var(--text-primary);}
+html.dark .nav-tab{color:var(--text-secondary);}
+html.dark .nav-tab.active{color:var(--text-primary);}
+html.dark .task-name{color:var(--text-primary);}
+html.dark .day-task-item{background:var(--bg-secondary);border-color:var(--border);}
+html.dark #search-bar{background:var(--nav-bg);border-color:var(--border);}
+html.dark #search-input{background:var(--input-bg);color:var(--text-primary);border-color:var(--border);}
+html.dark #search-results{background:var(--modal-bg);border-color:var(--border);}
+html.dark .search-result-item:hover{background:var(--bg-tertiary);}
+html.dark .reun-participant-chip{border-color:var(--border);color:var(--text-secondary);}
+html.dark .reun-participant-chip.selected{background:#1e3a5f;color:#bfdbfe;}
+
+/* search */
+#search-bar{display:none;align-items:center;gap:8px;padding:0 1.5rem;background:var(--nav-bg);border-bottom:0.5px solid var(--border);position:sticky;top:49px;z-index:49;}
+#search-input{flex:1;padding:8px 12px;border-radius:8px;border:0.5px solid var(--border);background:var(--input-bg);color:var(--text-primary);font-size:13px;font-family:inherit;max-width:500px;}
+#search-input:focus{outline:none;border-color:#93c5fd;}
+#search-results{position:absolute;top:100%;left:1.5rem;right:1.5rem;max-width:500px;background:var(--modal-bg);border:0.5px solid var(--border);border-radius:10px;box-shadow:0 4px 20px var(--shadow);z-index:300;display:none;max-height:320px;overflow-y:auto;}
+.search-result-item{display:flex;align-items:center;padding:10px 16px;cursor:pointer;border-bottom:0.5px solid var(--border-light);}
+.search-result-item:hover{background:var(--bg-tertiary);}
+.search-result-item:last-child{border-bottom:none;}
+/* dark toggle */
+#dark-toggle{background:none;border:none;cursor:pointer;font-size:16px;padding:4px 8px;border-radius:6px;}
+#dark-toggle:hover{background:var(--bg-tertiary);}
+/* search icon btn */
+#search-toggle{background:none;border:none;cursor:pointer;font-size:15px;padding:4px 8px;border-radius:6px;color:var(--text-secondary);}
+#search-toggle:hover{background:var(--bg-tertiary);}
 </style>
 </head>
 <body>
@@ -180,6 +251,8 @@ textarea.form-input{resize:vertical;min-height:60px}
   <div class="nav-tab" onclick="showPage('calendario',this)">Calendário</div>
   <div class="nav-tab" onclick="showPage('log',this)">Log</div>
   <div class="nav-spacer"></div>
+  <button id="search-toggle" onclick="toggleSearch()" title="Busca global (Ctrl+K)">🔍</button>
+  <button id="dark-toggle" onclick="toggleDarkMode()" title="Modo escuro">🌙</button>
   <div class="nav-user">
     <img id="nav-avatar" class="nav-avatar" src="" style="display:none"/>
     <span id="nav-name" style="font-size:12px;color:#666"></span>
@@ -187,6 +260,12 @@ textarea.form-input{resize:vertical;min-height:60px}
   </div>
 </div>
 
+<div id="search-bar">
+  <span style="font-size:13px;color:var(--text-secondary)">🔍</span>
+  <input id="search-input" placeholder="Buscar tarefas, projetos, reuniões... (Ctrl+K)" oninput="onSearchInput(this.value)"/>
+  <button onclick="toggleSearch()" style="font-size:13px;color:var(--text-secondary);background:none;border:none;cursor:pointer">✕</button>
+  <div id="search-results"></div>
+</div>
 <!-- TAREFAS -->
 <div class="page active" id="page-tarefas">
   <div class="header">
@@ -196,6 +275,7 @@ textarea.form-input{resize:vertical;min-height:60px}
       <button class="btn" onclick="openModal('projeto')">+ Projeto</button>
       <button class="btn" onclick="openModal('atribuicao')">+ Atribuição</button>
       <button class="btn" onclick="openModal('reuniao')">+ Reunião</button>
+      <button class="btn" onclick="exportExcel()" title="Exportar tarefas filtradas">⬇ Excel</button>
       <div class="tooltip-wrap">
         <button class="btn btn-primary" onclick="openModal('tarefa')">+ Nova tarefa</button>
         <span class="tooltip-text">Nova Tarelete</span>
@@ -204,11 +284,15 @@ textarea.form-input{resize:vertical;min-height:60px}
   </div>
   <div class="stats" id="stats"></div>
   <div class="filter-bar" id="filter-bar"></div>
-  <div class="sort-row">
+  <div class="sort-row" style="flex-wrap:wrap;gap:8px">
     <span class="sort-label">Ordenar:</span>
     <button class="sort-btn active" id="sort-prio" onclick="setSort('prio')">Prioridade</button>
     <button class="sort-btn" id="sort-date-asc" onclick="setSort('date-asc')">Prazo ↑</button>
     <button class="sort-btn" id="sort-date-desc" onclick="setSort('date-desc')">Prazo ↓</button>
+    <span style="width:1px;background:var(--border);margin:0 4px;align-self:stretch"></span>
+    <span class="sort-label">Visão:</span>
+    <button class="sort-btn active" id="view-todos" onclick="setViewMode('todos')">Todos</button>
+    <button class="sort-btn" id="view-semanal" onclick="setViewMode('semanal')">Semanal</button>
   </div>
   <div class="task-list" id="task-list"></div>
   <div class="concluded-bar" onclick="toggleConcluded()" id="concluded-bar" style="display:none">
@@ -426,6 +510,13 @@ textarea.form-input{resize:vertical;min-height:60px}
         <div class="form-row"><label class="form-label">Título</label><input class="form-input" id="f-reun-title" placeholder="Ex: Alinhamento de projeto"/></div>
         <div class="form-row"><label class="form-label">Descrição / Pauta</label><textarea class="form-input" id="f-reun-desc" placeholder="Assuntos a tratar..."></textarea></div>
         <div class="form-row"><label class="form-label">Projeto</label><select class="form-input" id="f-reun-proj"></select></div>
+        <div class="form-row"><label class="form-label">Recorrência</label>
+          <select class="form-input" id="f-reun-recurrence">
+            <option value="none">Sem recorrência</option>
+            <option value="weekly">Semanal</option>
+            <option value="monthly">Mensal</option>
+          </select>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
           <div class="form-row"><label class="form-label">Data</label><input class="form-input" type="date" id="f-reun-date"/></div>
           <div class="form-row"><label class="form-label">Início</label><input class="form-input" type="time" id="f-reun-start"/></div>
@@ -678,7 +769,7 @@ function taskCardHTML(t){
   var cl=t.checklist||[];
   var clDone=cl.filter(function(c){return c.done;}).length;
 
-  var h='<div class="task-card'+(t.done?" done":"")+'" style="border-left-color:'+projColor+'" onclick="openEditTask(\''+t.id+'\')">';
+  var h='<div class="task-card'+(t.done?" done":"")+' draggable="true" data-tid="'+t.id+'"" style="border-left-color:'+projColor+'" onclick="openEditTask(\''+t.id+'\')">' ;
   h+='<div class="task-top">';
   h+='<div class="check" style="border-color:'+projColor+';background:'+(t.done?projColor:"transparent")+'" onclick="event.stopPropagation();toggleDone(\''+t.id+'\')">'+(t.done?"&#10003;":"")+'</div>';
   h+='<span class="task-name">'+esc(t.name)+'</span>';
@@ -739,6 +830,7 @@ function render(){
   document.getElementById("filter-bar").innerHTML=fHTML;
 
   var visible=applyStatFilter(filteredOpen);
+  visible=applyViewFilter(visible);
   visible=sortedTasks(visible);
   document.getElementById("task-list").innerHTML=visible.length?visible.map(taskCardHTML).join(""):'<div class="empty">Nenhuma tarefa encontrada.</div>';
 
@@ -751,6 +843,7 @@ function render(){
   if(concludedOpen)cl2.innerHTML=done.map(taskCardHTML).join("");
   renderReunioesSection();
   renderLog();
+  setTimeout(initDrag,0);
 }
 
 function toggleDone(id){
@@ -1019,8 +1112,15 @@ function renderCal(){
   var total=firstDay+daysInMonth,rem=total%7===0?0:7-(total%7);
   for(var i2=1;i2<=rem;i2++)html+='<div class="cal-cell other-month"><div class="cal-date">'+i2+"</div></div>";
   document.getElementById("cal-grid").innerHTML=html;
-  // inject reunioes
-  reunioes.filter(function(r){return r.date;}).forEach(function(r){
+  // inject reunioes (including recurring)
+  var allReunForCal=reunioes.concat(expandRecurringMeetings());
+  var seenReunIds={};
+  allReunForCal=allReunForCal.filter(function(r){
+    if(r._isRecurInstance)return true;
+    if(seenReunIds[r.id])return false;
+    seenReunIds[r.id]=true;return true;
+  });
+  allReunForCal.filter(function(r){return r.date;}).forEach(function(r){
     var mo3=r.date.slice(0,7),myMo2=calYear+"-"+(String(calMonth+1).padStart(2,"0"));
     if(mo3!==myMo2)return;
     var cells=document.querySelectorAll(".cal-cell[onclick*=\"'"+r.date+"'\"]");
@@ -1377,7 +1477,240 @@ window.addEventListener("app-init",function(){
   render();renderCal();
 });
 
+// ============================================================
+// MODO ESCURO
+// ============================================================
+function initDarkMode(){
+  var saved=localStorage.getItem('darkMode');
+  if(saved==='1')document.documentElement.classList.add('dark');
+  updateDarkBtn();
+}
+function toggleDarkMode(){
+  var isDark=document.documentElement.classList.toggle('dark');
+  localStorage.setItem('darkMode',isDark?'1':'0');
+  updateDarkBtn();
+}
+function updateDarkBtn(){
+  var btn=document.getElementById('dark-toggle');
+  if(!btn)return;
+  var isDark=document.documentElement.classList.contains('dark');
+  btn.textContent=isDark?'☀️':'🌙';
+  btn.title=isDark?'Modo claro':'Modo escuro';
+}
+
+// ============================================================
+// BUSCA GLOBAL
+// ============================================================
+var searchOpen=false;
+function toggleSearch(){
+  searchOpen=!searchOpen;
+  var bar=document.getElementById('search-bar');
+  bar.style.display=searchOpen?'flex':'none';
+  if(searchOpen){document.getElementById('search-input').focus();}
+  else{document.getElementById('search-input').value='';renderSearchResults('');}
+}
+function onSearchInput(val){
+  renderSearchResults(val.trim().toLowerCase());
+}
+function renderSearchResults(q){
+  var el=document.getElementById('search-results');if(!el)return;
+  if(!q){el.innerHTML='';el.style.display='none';return;}
+  var results=[];
+  // tasks
+  tasks.forEach(function(t){
+    if(t.name.toLowerCase().includes(q)||( t.desc&&t.desc.toLowerCase().includes(q))){
+      var proj=getProjById(t.projId);
+      results.push({type:'tarefa',icon:'✓',label:t.name,sub:proj?proj.name:'',id:t.id});
+    }
+  });
+  // projetos
+  projetos.forEach(function(p){
+    if(p.name.toLowerCase().includes(q)||(p.desc&&p.desc.toLowerCase().includes(q))){
+      results.push({type:'projeto',icon:'📁',label:p.name,sub:p.desc||'',id:p.id});
+    }
+  });
+  // reunioes
+  reunioes.forEach(function(r){
+    if(r.title.toLowerCase().includes(q)||(r.desc&&r.desc.toLowerCase().includes(q))){
+      results.push({type:'reuniao',icon:'📅',label:r.title,sub:fmtReunDate(r),id:r.id});
+    }
+  });
+  if(!results.length){el.innerHTML='<div style="padding:12px 16px;font-size:13px;color:#aaa">Nenhum resultado encontrado.</div>';el.style.display='block';return;}
+  el.innerHTML=results.slice(0,8).map(function(r){
+    return '<div class="search-result-item" onclick="selectSearchResult(\''+r.type+'\',\''+r.id+'\')">'+'<span style="font-size:14px;margin-right:8px">'+r.icon+'</span>'+'<div><div style="font-size:13px;font-weight:500;color:var(--text-primary)">'+esc(r.label)+'</div>'+(r.sub?'<div style="font-size:11px;color:var(--text-secondary)">'+esc(r.sub)+'</div>':'')+'</div></div>';
+  }).join('');
+  el.style.display='block';
+}
+function selectSearchResult(type,id){
+  toggleSearch();
+  if(type==='tarefa')openEditTask(id);
+  else if(type==='projeto')openModal('projeto');
+  else if(type==='reuniao')openEditReuniao(id);
+}
+document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();toggleSearch();}
+  if(e.key==='Escape'&&searchOpen)toggleSearch();
+});
+
+// ============================================================
+// DRAG TO REORDER
+// ============================================================
+var dragSrcId=null;
+var viewMode='todos'; // 'todos' or 'semanal'
+function initDrag(){
+  var list=document.getElementById('task-list');if(!list)return;
+  list.addEventListener('dragstart',function(e){
+    var card=e.target.closest('.task-card');if(!card)return;
+    dragSrcId=card.dataset.tid;
+    card.style.opacity='0.4';
+  });
+  list.addEventListener('dragend',function(e){
+    var card=e.target.closest('.task-card');if(!card)return;
+    card.style.opacity='1';dragSrcId=null;
+  });
+  list.addEventListener('dragover',function(e){
+    e.preventDefault();
+    var card=e.target.closest('.task-card');
+    if(!card||!dragSrcId||card.dataset.tid===dragSrcId)return;
+    card.style.borderTop='2px solid #378ADD';
+  });
+  list.addEventListener('dragleave',function(e){
+    var card=e.target.closest('.task-card');if(!card)return;
+    card.style.borderTop='';
+  });
+  list.addEventListener('drop',function(e){
+    e.preventDefault();
+    var card=e.target.closest('.task-card');
+    if(!card||!dragSrcId||card.dataset.tid===dragSrcId)return;
+    card.style.borderTop='';
+    var targetId=card.dataset.tid;
+    // reorder tasks array
+    var srcIdx=tasks.findIndex(function(t){return t.id===dragSrcId;});
+    var tgtIdx=tasks.findIndex(function(t){return t.id===targetId;});
+    if(srcIdx<0||tgtIdx<0)return;
+    var moved=tasks.splice(srcIdx,1)[0];
+    tasks.splice(tgtIdx,0,moved);
+    saveAll();render();
+  });
+}
+
+// ============================================================
+// EXPORTAR EXCEL
+// ============================================================
+function exportExcel(){
+  // Build CSV then trigger download (Excel opens CSV fine)
+  var rows=[['Tarefa','Descrição','Projeto','Empresa','Atribuições','Prioridade','Início','Prazo','Status','Checklist']];
+  var toExport=tasks.filter(matchesFilters);
+  toExport.forEach(function(t){
+    var pid=t.projId||(t.projIds&&t.projIds[0]);
+    var proj=getProjById(pid);
+    var empresa=proj?getEmpresaById(proj.companyId):null;
+    var tatribs=getTaskAtribs(t);
+    var cl=t.checklist||[];
+    var clDone=cl.filter(function(c){return c.done;}).length;
+    rows.push([
+      t.name||'',
+      t.desc||'',
+      proj?proj.name:'',
+      empresa?empresa.name:'',
+      tatribs.map(function(a){return a.name;}).join('; '),
+      t.prio==='alta'?'Alta':t.prio==='media'?'Média':'Baixa',
+      t.startDate||'',
+      t.date||'',
+      t.done?'Concluída':'Em aberto',
+      cl.length?clDone+'/'+cl.length:''
+    ]);
+  });
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+(c||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var bom='\uFEFF'; // UTF-8 BOM for Excel
+  var blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download='tarefas_'+todayStr()+'.csv';
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// RECORRÊNCIA DE REUNIÃO
+// ============================================================
+function expandRecurringMeetings(){
+  // For each recurring meeting, generate instances for current cal month
+  var instances=[];
+  var myMo=calYear+'-'+(String(calMonth+1).padStart(2,'0'));
+  reunioes.forEach(function(r){
+    if(!r.recurrence||r.recurrence==='none'||!r.date)return;
+    var base=new Date(r.date+'T00:00:00');
+    var monthStart=new Date(calYear,calMonth,1);
+    var monthEnd=new Date(calYear,calMonth+1,0);
+    var cur=new Date(base);
+    // move to first occurrence in or before this month
+    while(cur>monthEnd){
+      if(r.recurrence==='weekly')cur.setDate(cur.getDate()-7);
+      else if(r.recurrence==='monthly')cur.setMonth(cur.getMonth()-1);
+      else break;
+    }
+    while(cur<monthStart){
+      if(r.recurrence==='weekly')cur.setDate(cur.getDate()+7);
+      else if(r.recurrence==='monthly')cur.setMonth(cur.getMonth()+1);
+      else break;
+    }
+    // collect all in month
+    var iter=new Date(cur);
+    while(iter<=monthEnd){
+      var ds=iter.toISOString().slice(0,10);
+      if(ds.slice(0,7)===myMo){
+        instances.push(Object.assign({},r,{date:ds,_isRecurInstance:true}));
+      }
+      if(r.recurrence==='weekly')iter.setDate(iter.getDate()+7);
+      else if(r.recurrence==='monthly')iter.setMonth(iter.getMonth()+1);
+      else break;
+    }
+  });
+  return instances;
+}
+
+
+// ============================================================
+// VISÃO SEMANAL
+// ============================================================
+function getWeekRange(){
+  var now=new Date();
+  var day=now.getDay(); // 0=Sun
+  var sun=new Date(now);sun.setDate(now.getDate()-day);sun.setHours(0,0,0,0);
+  var sat=new Date(sun);sat.setDate(sun.getDate()+6);sat.setHours(23,59,59,999);
+  var toS=function(d){return d.toISOString().slice(0,10);};
+  return{start:toS(sun),end:toS(sat)};
+}
+function taskInWeek(t,range){
+  // task touches the week if:
+  // 1. deadline (t.date) is within the week, OR
+  // 2. task spans the week (startDate <= range.end AND date >= range.start)
+  var dl=t.date||'';
+  var sd=t.startDate||dl;
+  if(!dl)return false;
+  // single day task: deadline in range
+  if(sd===dl) return dl>=range.start&&dl<=range.end;
+  // multi-day: overlaps range
+  return sd<=range.end&&dl>=range.start;
+}
+function setViewMode(mode){
+  viewMode=mode;
+  ['todos','semanal'].forEach(function(m){
+    var b=document.getElementById('view-'+m);
+    if(b)b.classList.toggle('active',m===mode);
+  });
+  render();
+}
+function applyViewFilter(list){
+  if(viewMode!=='semanal')return list;
+  var range=getWeekRange();
+  return list.filter(function(t){return taskInWeek(t,range);});
+}
+
 </script>
+
+
 
 </body>
 </html>
