@@ -554,23 +554,33 @@ const db = getFirestore(fbApp);
 const auth = getAuth(fbApp);
 const provider = new GoogleAuthProvider();
 
-const AUTHORIZED_EMAILS = [
-  "danielferlete@gmail.com",
-  "luonely@gmail.com",
-  "camila.lima.maranhao@gmail.com",
-  "katiasousa2215@gmail.com"
-];
+const ADMIN_EMAILS = ["danielferlete@gmail.com"];
 
-function isAuthorized(email){ return AUTHORIZED_EMAILS.includes(email.toLowerCase()); }
+function isAdminEmail(email){ return ADMIN_EMAILS.includes((email||"").toLowerCase()); }
+
+function isAuthorizedByAtribuicoes(email, data){
+  // Admin always authorized
+  if(isAdminEmail(email)) return true;
+  // Check if email exists in atribuicoes (or old responsaveis)
+  const atribs = data.atribuicoes || data.responsaveis || [];
+  return atribs.some(a => a.email && a.email.toLowerCase() === email.toLowerCase());
+}
 
 window._googleSignIn = async function(){
   const errEl = document.getElementById("login-error");
   errEl.style.display="none"; errEl.textContent="";
   try {
     const result = await signInWithPopup(auth, provider);
-    if(!isAuthorized(result.user.email)){
+    const email = result.user.email;
+    // Load data to check atribuicoes
+    let data = {};
+    try {
+      const snap = await getDoc(doc(db,"app","dados"));
+      data = snap.exists() ? snap.data() : {};
+    } catch(e){}
+    if(!isAuthorizedByAtribuicoes(email, data)){
       await signOut(auth);
-      errEl.textContent="Acesso não autorizado para "+result.user.email;
+      errEl.textContent="Acesso não autorizado. Solicite ao administrador que cadastre seu e-mail como atribuição.";
       errEl.style.display="block";
     }
   } catch(e){ errEl.textContent="Erro: "+e.message; errEl.style.display="block"; }
@@ -583,17 +593,32 @@ window._fbSave = function(data){
 };
 
 onAuthStateChanged(auth, async (user) => {
-  if(user && isAuthorized(user.email)){
+  if(user){
+    // Load data first to validate access
+    let data = {};
+    try {
+      const snap = await getDoc(doc(db,"app","dados"));
+      data = snap.exists() ? snap.data() : {empresas:[],projetos:[],atribuicoes:[],tasks:[],logEntries:[],reunioes:[]};
+    } catch(e){ data = {empresas:[],projetos:[],atribuicoes:[],tasks:[],logEntries:[],reunioes:[]}; }
+
+    if(!isAuthorizedByAtribuicoes(user.email, data)){
+      // Not authorized - sign out silently
+      await signOut(auth);
+      const errEl = document.getElementById("login-error");
+      errEl.textContent="Acesso não autorizado para "+user.email;
+      errEl.style.display="block";
+      document.getElementById("login-screen").style.display="flex";
+      document.getElementById("app-root").style.display="none";
+      return;
+    }
+
     window._currentUser = { email: user.email, name: user.displayName||user.email, photo: user.photoURL||"" };
     const nameEl=document.getElementById("nav-name");
     const avatarEl=document.getElementById("nav-avatar");
     if(nameEl) nameEl.textContent=user.displayName||user.email;
     if(avatarEl && user.photoURL){ avatarEl.src=user.photoURL; avatarEl.style.display="block"; }
     document.getElementById("login-screen").style.display="none";
-    try {
-      const snap = await getDoc(doc(db,"app","dados"));
-      window._initialData = snap.exists() ? snap.data() : {empresas:[],projetos:[],responsaveis:[],tasks:[],logEntries:[]};
-    } catch(e){ window._initialData = {empresas:[],projetos:[],responsaveis:[],tasks:[],logEntries:[]}; }
+    window._initialData = data;
     document.getElementById("app-root").style.display="block";
     window.dispatchEvent(new Event("app-init"));
   } else {
