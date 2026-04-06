@@ -648,7 +648,7 @@ html.dark .tooltip-wrap .tooltip-text{background:#f0f0f0;color:#1a1a1a;}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, runTransaction, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -703,20 +703,44 @@ window._googleSignIn = async function(){
 
 window._signOut = async function(){ await signOut(auth); };
 
-window._fbSave = function(data){
-  setDoc(doc(db,"app","dados"), data).catch(e=>console.error("Save error:",e));
+// Atomic save: read latest from Firestore, merge our changes, write back
+window._fbSave = async function(data){
+  const ref = doc(db,"app","dados");
+  try {
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      const remote = snap.exists() ? snap.data() : {};
+      // Our full state always wins for the keys we manage
+      tx.set(ref, Object.assign({}, remote, data));
+    });
+  } catch(e){ console.error("Save error:",e); }
 };
 
+let _unsubscribe = null;
+
+function _applyRemoteData(data){
+  // Don't overwrite local state if user has a modal open (editing in progress)
+  const modals = ['modal-tarefa','modal-reuniao','modal-nota'];
+  const editing = modals.some(function(id){
+    var el = document.getElementById(id);
+    return el && el.style.display !== 'none';
+  });
+  if(editing) return;
+  window._initialData = data;
+  window.dispatchEvent(new Event("app-init"));
+}
+
 onAuthStateChanged(auth, async (user) => {
+  if(_unsubscribe){ _unsubscribe(); _unsubscribe=null; }
   if(user){
-    const [cfg, snapData] = await Promise.all([
-      loadConfig(),
-      getDoc(doc(db,"app","dados")).catch(()=>null)
-    ]);
+    const cfg = await loadConfig();
     window._adminEmail = (cfg.adminEmail||"").toLowerCase();
+
+    // Load once for access check
     let data = {};
     try {
-      data = snapData && snapData.exists() ? snapData.data() : {empresas:[],projetos:[],atribuicoes:[],tasks:[],logEntries:[],reunioes:[]};
+      const snap = await getDoc(doc(db,"app","dados"));
+      data = snap.exists() ? snap.data() : {empresas:[],projetos:[],atribuicoes:[],tasks:[],logEntries:[],reunioes:[]};
     } catch(e){ data = {empresas:[],projetos:[],atribuicoes:[],tasks:[],logEntries:[],reunioes:[]}; }
 
     if(!isAuthorizedByAtribuicoes(user.email, data)){
@@ -738,6 +762,11 @@ onAuthStateChanged(auth, async (user) => {
     window._initialData = data;
     document.getElementById("app-root").style.display="block";
     window.dispatchEvent(new Event("app-init"));
+
+    // Subscribe to real-time updates after initial load
+    _unsubscribe = onSnapshot(doc(db,"app","dados"), function(snap){
+      if(snap.exists()) _applyRemoteData(snap.data());
+    });
   } else {
     document.getElementById("login-screen").style.display="flex";
     document.getElementById("app-root").style.display="none";
