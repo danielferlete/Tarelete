@@ -1342,6 +1342,7 @@ function saveEmpresa(){
   empresas.push({id:"e"+Date.now(),name:name});document.getElementById("f-empresa-name").value="";saveAll();renderEmpresaList();
 }
 function deleteEmpresa(id){
+  if(!isAdmin()){alert("Apenas o administrador pode excluir.");return;}
   if(projetos.some(function(p){return p.companyId===id;})){alert("Remova os projetos desta empresa primeiro.");return;}
   empresas=empresas.filter(function(e){return e.id!==id;});saveAll();renderEmpresaList();
 }
@@ -1366,6 +1367,7 @@ function saveAtrib(){
   saveAll();renderAtribList();
 }
 function deleteAtrib(id){
+  if(!isAdmin()){alert("Apenas o administrador pode excluir.");return;}
   if(tasks.some(function(t){var ids=t.atribIds||(t.respId?[t.respId]:[]);return ids.includes(id);})){alert("Remova esta atribuição das tarefas antes.");return;}
   atribuicoes=atribuicoes.filter(function(a){return a.id!==id;});saveAll();renderAtribList();
 }
@@ -1406,6 +1408,7 @@ function openEditProject(id){
   document.getElementById("proj-del-btn").style.display="block";
 }
 function deleteProject(){
+  if(!isAdmin()){alert("Apenas o administrador pode excluir.");return;}
   if(!editProjId)return;
   if(tasks.some(function(t){return(t.projId||(t.projIds&&t.projIds[0]))===editProjId;})){alert("Mova ou exclua as tarefas deste projeto antes.");return;}
   projetos=projetos.filter(function(p){return p.id!==editProjId;});
@@ -1581,6 +1584,7 @@ function saveReuniao(){
   saveAll();closeModal("reuniao");renderReunioesSection();renderCal();
 }
 function deleteReuniao(){
+  if(!isAdmin()){alert("Apenas o administrador pode excluir.");return;}
   if(!editReunId)return;
   var r=reunioes.find(function(x){return x.id===editReunId;});
   addLog("reun_deleted","Reunião excluída: "+(r?r.title:""),null,editReunId);
@@ -1591,12 +1595,78 @@ function deleteReuniao(){
 // ============================================================
 // BOOT
 // ============================================================
+
+// ============================================================
+// ACCESS CONTROL
+// ============================================================
+var ADMIN_EMAIL_JS='danielferlete@gmail.com';
+
+function isAdmin(){
+  var u=nowUser();
+  return u&&u.email&&u.email.toLowerCase()===ADMIN_EMAIL_JS.toLowerCase();
+}
+
+function getMyAtrib(){
+  var u=nowUser();if(!u||u.email==='?')return null;
+  return atribuicoes.find(function(a){return a.email&&a.email.toLowerCase()===u.email.toLowerCase();});
+}
+
+function applyAccessFilter(list){
+  if(isAdmin())return list;
+  var myAtrib=getMyAtrib();
+  if(!myAtrib)return [];
+  return list.filter(function(t){
+    var ids=t.atribIds||(t.respId?[t.respId]:[]);
+    return ids.includes(myAtrib.id);
+  });
+}
+
+function applyAccessFilterReun(list){
+  if(isAdmin())return list;
+  var myAtrib=getMyAtrib();
+  if(!myAtrib)return [];
+  return list.filter(function(r){
+    return(r.participants||[]).includes(myAtrib.id);
+  });
+}
+
+function applyUIAccess(){
+  var admin=isAdmin();
+  // Hide admin-only buttons
+  ['btn-empresa','btn-projeto','btn-atribuicao'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.style.display=admin?'':'none';
+  });
+  // Hide Log nav tab for non-admins
+  document.querySelectorAll('.nav-tab').forEach(function(tab){
+    if(tab.getAttribute('onclick')&&tab.getAttribute('onclick').indexOf("'log'")>=0){
+      tab.style.display=admin?'':'none';
+    }
+  });
+  // Hide all delete buttons for non-admins
+  if(!admin){
+    document.querySelectorAll('.del-btn').forEach(function(b){b.style.display='none';});
+    document.querySelectorAll('.list-item-del').forEach(function(b){b.style.display='none';});
+  }
+}
+
+function autoSelectProjects(){
+  var u=nowUser();
+  if(!u||u.email==='?')return;
+  var myAtrib=atribuicoes.find(function(a){return a.email&&a.email.toLowerCase()===u.email.toLowerCase();});
+  if(!myAtrib)return;
+  filterAtribs=[myAtrib.id];
+  calFilterAtribs=[myAtrib.id];
+}
+// ============================================================
+// END ACCESS CONTROL
+// ============================================================
+
 window.addEventListener("app-init",function(){
   var d=window._initialData||{};
   empresas=d.empresas||[];projetos=d.projetos||[];
   // migrate: if old 'responsaveis' key exists, rename to atribuicoes
   atribuicoes=d.atribuicoes||d.responsaveis||[];
-  tasks=d.tasks||[];logEntries=d.logEntries||[];reunioes=d.reunioes||[];
+  tasks=d.tasks||[];logEntries=d.logEntries||[];reunioes=d.reunioes||[];notas=d.notas||[];
   autoSelectProjects();
   render();renderCal();
 });
@@ -1898,7 +1968,7 @@ function openEditNota(id){
   document.getElementById('nota-editor').innerHTML=n.content||'';
   populateNotaProj();
   document.getElementById('f-nota-proj').value=n.projId||'';
-  document.getElementById('nota-del-btn').style.display='block';
+  document.getElementById('nota-del-btn').style.display=isAdmin()?'block':'none';
   renderNotaShare();
   document.getElementById('modal-nota').style.display='flex';
 }
@@ -1926,8 +1996,8 @@ function deleteNota(){
   if(!editNotaId)return;
   var n=notas.find(function(x){return x.id===editNotaId;});
   var u=nowUser();
-  // Only owner or admin can delete
-  if(!isAdmin()&&n&&n.ownerEmail!==u.email){alert('Apenas quem criou a nota pode excluí-la.');return;}
+  // Only admin can delete
+  if(!isAdmin()){alert('Apenas o administrador pode excluir notas.');return;}
   notas=notas.filter(function(n){return n.id!==editNotaId;});
   saveAll();closeModal('nota');renderNotasPage();
 }
@@ -1969,26 +2039,29 @@ function renderNotasPage(){
     html+='<div style="font-size:11px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px">';
     if(proj)html+='<span style="width:8px;height:8px;border-radius:50%;background:'+projColor+';display:inline-block"></span>';
     html+=(proj?esc(proj.name):'Sem projeto')+'</div>';
-    grouped[key].forEach(function(n){
+        grouped[key].forEach(function(n){
       var proj2=getProjById(n.projId);
-      var projColor2=proj2&&proj2.color?proj2.color:'var(--border)';
+      var projColor2=proj2&&proj2.color?proj2.color:'#aaa';
       var shared=(n.sharedWith||[]).map(function(id){return getAtribById(id);}).filter(Boolean);
-      var preview=n.content?n.content.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,120):'';
+      var rawText=n.content?n.content.replace(/<[^>]+>/g,' ').replace(/[ \t]+/g,' ').trim().slice(0,100):'';
       var u=nowUser();
-      var isOwner=isAdmin()||n.ownerEmail===u.email;
-      html+='<div class="nota-card" style="border-left:4px solid '+projColor2+'" onclick="openEditNota(\''+n.id+'\')">';
-      html+='<div class="nota-card-title">'+esc(n.title)+'</div>';
-      if(preview)html+='<div class="nota-card-preview">'+esc(preview)+'</div>';
-      html+='<div class="nota-card-meta">';
-      html+='<span style="font-size:11px;color:var(--text-tertiary)">'+new Date(n.updatedAt||n.createdAt).toLocaleDateString('pt-BR')+'</span>';
-      if(shared.length){
-        html+='<span style="font-size:11px;color:var(--text-tertiary)">Compartilhada com:</span>';
-        shared.forEach(function(a){html+='<span class="nota-shared-pill">'+dot(a.color||'#7F77DD')+esc(a.name)+'</span>';});
-      }
-      if(!isOwner)html+='<span class="nota-shared-pill" style="background:#dbeafe;color:#1e40af">Compartilhada comigo</span>';
-      html+='</div></div>';
+      var isOwner=isAdmin()||(n.ownerEmail&&n.ownerEmail.toLowerCase()===u.email.toLowerCase());
+      var ownerAtrib=atribuicoes.find(function(a){return a.email&&n.ownerEmail&&a.email.toLowerCase()===n.ownerEmail.toLowerCase();});
+      html+='<div class="task-card" style="border-left-color:'+projColor2+'" onclick="openEditNota(\''+n.id+'\')">';
+      html+='<div class="task-top">';
+      html+='<span class="task-name">'+esc(n.title)+'</span>';
+      if(!isOwner)html+='<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#dbeafe;color:#1e40af;font-weight:500;white-space:nowrap">Compartilhada comigo</span>';
+      html+='</div>';
+      html+='<div class="task-meta">';
+      if(proj2)html+='<span class="company-tag" style="background:'+hexAlpha(projColor2,.12)+';color:'+projColor2+'">'+esc(proj2.name)+'</span>';
+      if(shared.length){html+='<span class="sep">·</span>';shared.forEach(function(a){html+='<span class="resp-pill"><span class="resp-dot" style="background:'+(a.color||'#7F77DD')+'"></span>'+esc(a.name)+'</span> ';});}
+      html+='<span class="sep">·</span><span class="meta-item">'+new Date(n.updatedAt||n.createdAt||Date.now()).toLocaleDateString('pt-BR')+'</span>';
+      html+='</div>';
+      if(rawText)html+='<div style="font-size:12px;color:var(--text-secondary);margin-top:4px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">'+esc(rawText)+'</div>';
+      html+='</div>';
     });
-    html+='</div>';
+
+
   });
   el.innerHTML=html;
 }
