@@ -1670,7 +1670,7 @@ window.addEventListener("app-init",function(){
   atribuicoes=d.atribuicoes||d.responsaveis||[];
   tasks=d.tasks||[];logEntries=d.logEntries||[];reunioes=d.reunioes||[];notas=d.notas||[];
   autoSelectProjects();
-  render();renderCal();
+  render();renderCal();renderNotasPage();
 });
 
 // ============================================================
@@ -1970,7 +1970,8 @@ function openEditNota(id){
   document.getElementById('nota-editor').innerHTML=n.content||'';
   populateNotaProj();
   document.getElementById('f-nota-proj').value=n.projId||'';
-  document.getElementById('nota-del-btn').style.display=isAdmin()?'block':'none';
+  var isOwner=(n.ownerEmail||ADMIN_EMAIL_JS).toLowerCase()===nowUser().email.toLowerCase();
+  document.getElementById('nota-del-btn').style.display=isOwner?'block':'none';
   renderNotaShare();
   document.getElementById('modal-nota').style.display='flex';
 }
@@ -1998,18 +1999,20 @@ function deleteNota(){
   if(!editNotaId)return;
   var n=notas.find(function(x){return x.id===editNotaId;});
   var u=nowUser();
-  // Only admin can delete
-  if(!isAdmin()){alert('Apenas o administrador pode excluir notas.');return;}
+  var isOwner=(n.ownerEmail||ADMIN_EMAIL_JS).toLowerCase()===nowUser().email.toLowerCase();
+  if(!isOwner){alert('Apenas o dono da nota pode excluí-la.');return;}
   notas=notas.filter(function(n){return n.id!==editNotaId;});
   saveAll();closeModal('nota');renderNotasPage();
 }
 
 function getVisibleNotas(){
   var u=nowUser();
+  if(!u||u.email==='?')return[];
   return notas.filter(function(n){
-    // own notes
-    if(n.ownerEmail&&n.ownerEmail.toLowerCase()===u.email.toLowerCase())return true;
-    // shared with me
+    // notes without ownerEmail belong to admin
+    var owner=(n.ownerEmail||ADMIN_EMAIL_JS).toLowerCase();
+    if(owner===u.email.toLowerCase())return true;
+    // shared with me via atribuição
     var myAtrib=getMyAtrib();
     if(myAtrib&&(n.sharedWith||[]).includes(myAtrib.id))return true;
     return false;
