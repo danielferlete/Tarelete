@@ -710,14 +710,41 @@ window._googleSignIn = async function(){
 window._signOut = async function(){ await signOut(auth); };
 
 // Atomic save: read latest from Firestore, merge our changes, write back
+// Merge two arrays by id, keeping the item with the highest updatedAt
+function _mergeById(remote, local){
+  var map = {};
+  (remote||[]).forEach(function(item){ map[item.id] = item; });
+  (local||[]).forEach(function(item){
+    var r = map[item.id];
+    if(!r || (item.updatedAt||0) >= (r.updatedAt||0)){
+      map[item.id] = item;
+    }
+  });
+  return Object.values(map);
+}
+
 window._fbSave = async function(data){
   const ref = doc(db,"app","dados");
   try {
     await runTransaction(db, async (tx) => {
       const snap = await tx.get(ref);
       const remote = snap.exists() ? snap.data() : {};
-      // Our full state always wins for the keys we manage
-      tx.set(ref, Object.assign({}, remote, data));
+      // For arrays of domain objects, merge by id + updatedAt so concurrent
+      // edits to different items are both preserved.
+      const merged = Object.assign({}, remote, data);
+      ['tasks','reunioes','notas','logEntries','empresas','projetos','atribuicoes'].forEach(function(key){
+        if(remote[key] && data[key]){
+          // logEntries has no id conflicts worth merging — local wins (newest appended first)
+          if(key === 'logEntries'){
+            var remoteIds = new Set((remote[key]||[]).map(function(l){return l.id;}));
+            var newEntries = (data[key]||[]).filter(function(l){return !remoteIds.has(l.id);});
+            merged[key] = newEntries.concat(remote[key]||[]).slice(0,500);
+          } else {
+            merged[key] = _mergeById(remote[key], data[key]);
+          }
+        }
+      });
+      tx.set(ref, merged);
     });
   } catch(e){ console.error("Save error:",e); }
 };
@@ -1558,7 +1585,8 @@ function saveTask(){
     checklist:cleanCl,
     createdBy:existing?existing.createdBy:u.email,
     createdByName:existing?existing.createdByName:u.name,
-    createdAt:existing?existing.createdAt:Date.now()
+    createdAt:existing?existing.createdAt:Date.now(),
+    updatedAt:Date.now()
   };
   if(isNew){tasks=tasks.concat([task]);addLog("created","Tarefa criada: "+name,task.id);}
   else{
@@ -1671,7 +1699,7 @@ function saveReuniao(){
   var errEl=document.getElementById("reun-time-error");
   if(start&&end&&end<=start){errEl.style.display="block";return;}errEl.style.display="none";
   var u=nowUser(),isNew=!editReunId;
-  var reun={id:editReunId||"reun"+Date.now(),title:title,desc:document.getElementById("f-reun-desc").value.trim(),projId:document.getElementById("f-reun-proj").value||null,date:document.getElementById("f-reun-date").value,start:start,end:end,participants:[...selectedParticipants],createdBy:u.email,createdAt:isNew?Date.now():(reunioes.find(function(x){return x.id===editReunId;})||{}).createdAt||Date.now()};
+  var reun={id:editReunId||"reun"+Date.now(),title:title,desc:document.getElementById("f-reun-desc").value.trim(),projId:document.getElementById("f-reun-proj").value||null,date:document.getElementById("f-reun-date").value,start:start,end:end,participants:[...selectedParticipants],createdBy:u.email,createdAt:isNew?Date.now():(reunioes.find(function(x){return x.id===editReunId;})||{}).createdAt||Date.now(),updatedAt:Date.now()};
   if(isNew){reunioes=reunioes.concat([reun]);addLog("reun_created","Reunião criada: "+title,null,reun.id);}
   else{reunioes=reunioes.map(function(r){return r.id===editReunId?reun:r;});addLog("reun_edited","Reunião editada: "+title,null,reun.id);}
   saveAll();closeModal("reuniao");renderReunioesSection();renderCal();
