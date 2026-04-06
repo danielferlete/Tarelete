@@ -184,6 +184,7 @@ html.dark .chip{border-color:var(--border);color:var(--text-secondary);}
 html.dark .chip.active{background:var(--chip-active);color:var(--text-primary);border-color:#555;}
 html.dark .concluded-bar{background:var(--bg-secondary);border-color:var(--border);}
 html.dark .reun-card{background:var(--bg-secondary);border-color:var(--border);color:var(--text-primary);}
+html.dark .reun-card *{color:var(--text-primary);}
 html.dark .drawer{background:var(--drawer-bg);border-color:var(--border);}
 html.dark .drawer-header{border-color:var(--border);}
 html.dark .chat-msg{background:var(--chat-msg-bg);color:var(--chat-msg-color);}
@@ -420,6 +421,11 @@ html.dark .tooltip-wrap .tooltip-text{background:#f0f0f0;color:#1a1a1a;}
 </div>
 
 <!-- MODAL DIA -->
+<div id="modal-proj-popup" class="modal-bg" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal" style="max-width:400px" onclick="event.stopPropagation()">
+    <div class="modal-proj-popup-body"></div>
+  </div>
+</div>
 <div id="modal-day" class="modal-bg" style="display:none" onclick="if(event.target===this)this.style.display='none'">
   <div class="modal" style="max-width:720px;overflow-y:auto" onclick="event.stopPropagation()">
     <div class="modal-body">
@@ -495,7 +501,7 @@ html.dark .tooltip-wrap .tooltip-text{background:#f0f0f0;color:#1a1a1a;}
 </div>
 
 <!-- MODAL TAREFA -->
-<div id="modal-tarefa" class="modal-bg" style="display:none" onclick="closeBg('tarefa',event)">
+<div id="modal-tarefa" class="modal-bg" style="display:none">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-tabs-row">
       <div class="modal-tab active" id="tab-detalhes" onclick="switchTab('detalhes')">Detalhes</div>
@@ -558,7 +564,7 @@ html.dark .tooltip-wrap .tooltip-text{background:#f0f0f0;color:#1a1a1a;}
 </div>
 
 <!-- MODAL REUNIÃO -->
-<div id="modal-reuniao" class="modal-bg" style="display:none" onclick="closeBg('reuniao',event)">
+<div id="modal-reuniao" class="modal-bg" style="display:none">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-tabs-row">
       <div class="modal-tab active" id="tab-reuniao-detalhes" onclick="switchReunTab('detalhes')">Detalhes</div>
@@ -599,6 +605,7 @@ html.dark .tooltip-wrap .tooltip-text{background:#f0f0f0;color:#1a1a1a;}
     <div class="modal-body" style="display:flex;flex-direction:column;flex:1;overflow:hidden;padding:1rem">
       <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
         <input class="form-input" id="f-nota-title" placeholder="Título da nota..." style="flex:1;font-size:15px;font-weight:500"/>
+        <input type="date" class="form-input" id="f-nota-date" style="width:155px" title="Prazo de entrega (obrigatório)"/>
         <select class="form-input" id="f-nota-proj" style="width:180px"></select>
       </div>
       <!-- Toolbar -->
@@ -903,10 +910,14 @@ function taskCardHTML(t){
   h+=(t.prio==="alta"?"Alta":t.prio==="media"?"Média":"Baixa")+"</span></div>";
   h+='<div class="task-meta">';
   if(empresa)h+='<span class="company-tag" style="background:'+hexAlpha(projColor,.12)+';color:'+projColor+'">'+esc(empresa.name)+"</span>";
-  if(proj)h+='<span class="sep">·</span><span class="meta-item">'+esc(proj.name)+"</span>";
+  if(proj)h+='<span class="sep">·</span><span class="meta-item" style="cursor:pointer;text-decoration:underline dotted" onclick="event.stopPropagation();openProjPopup(\''+pid+'\')">'+esc(proj.name)+"</span>";
   if(tatribs.length){
     h+='<span class="sep">·</span>';
-    tatribs.forEach(function(a){h+='<span class="resp-pill"><span class="resp-dot" style="background:'+(a.color||"#7F77DD")+'"></span>'+esc(a.name)+"</span> ";});
+    var creatorName=t.createdByName||(t.createdBy?t.createdBy:'?');
+    tatribs.forEach(function(a){
+      var tooltip='Atribuído por: '+creatorName+' para: '+esc(a.name);
+      h+='<span class="resp-pill tooltip-wrap" title="'+tooltip+'"><span class="resp-dot" style="background:'+(a.color||"#7F77DD")+'"></span>'+esc(a.name)+'<span class="tooltip-text">Atribuído por: '+esc(creatorName)+'</span></span> ';
+    });
   }
   if(t.date)h+='<span class="sep">·</span>'+fmtDateMeta(t);
   if(cmtCount)h+='<span class="sep">·</span><span class="meta-item" style="cursor:pointer" onclick="event.stopPropagation();openDrawer(\''+t.id+'\')">&#128172; '+cmtCount+"</span>";
@@ -1014,6 +1025,24 @@ function toggleClPopup(clId){
   if(t)renderClPopupItems(t.checklist||[]);
 }
 
+function openProjPopup(pid){
+  var p=getProjById(pid);if(!p)return;
+  var projColor=p.color||"#aaa";
+  var empresa=getEmpresaById(p.companyId);
+  var html='<div style="padding:1.25rem;max-width:360px">';
+  html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
+  html+='<span style="width:12px;height:12px;border-radius:50%;background:'+projColor+';display:inline-block;flex-shrink:0"></span>';
+  html+='<span style="font-size:16px;font-weight:500;color:var(--text-primary)">'+esc(p.name)+'</span></div>';
+  if(empresa)html+='<div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px">'+esc(empresa.name)+'</div>';
+  if(p.desc)html+='<div style="font-size:13px;color:var(--text-primary);line-height:1.5">'+esc(p.desc)+'</div>';
+  else html+='<div style="font-size:13px;color:var(--text-tertiary);font-style:italic">Sem descrição cadastrada.</div>';
+  html+='<div style="margin-top:14px;text-align:right"><button class="btn" onclick="document.getElementById(\'modal-proj-popup\').style.display=\'none\'">Fechar</button></div>';
+  html+='</div>';
+  var modal=document.getElementById('modal-proj-popup');
+  modal.querySelector('.modal-proj-popup-body').innerHTML=html;
+  modal.style.display='flex';
+}
+
 // ============================================================
 // LOG
 // ============================================================
@@ -1024,7 +1053,9 @@ function logItemHTML(l){
 }
 function renderLog(){
   var el=document.getElementById("log-list");if(!el)return;
-  el.innerHTML=logEntries.length?logEntries.map(logItemHTML).join(""):'<div class="empty">Nenhuma alteração registrada ainda.</div>';
+  var cutoff=Date.now()-7*24*60*60*1000;
+  var recent=logEntries.filter(function(l){return l.ts>=cutoff;});
+  el.innerHTML=recent.length?recent.map(logItemHTML).join(""):'<div class="empty">Nenhuma alteração nos últimos 7 dias.</div>';
 }
 
 // ============================================================
@@ -1458,6 +1489,7 @@ function openEditTask(id){
 }
 function saveTask(){
   var name=document.getElementById("f-name").value.trim();if(!name)return;
+  if(!selectedAtribIds.length){alert("Selecione ao menos uma atribuição antes de salvar.");return;}
   var startDate=document.getElementById("f-start-date").value;
   var date=document.getElementById("f-date").value;
   var errEl=document.getElementById("date-error");
@@ -1478,6 +1510,7 @@ function saveTask(){
     comments:existing?existing.comments||[]:[],
     checklist:cleanCl,
     createdBy:existing?existing.createdBy:u.email,
+    createdByName:existing?existing.createdByName:u.name,
     createdAt:existing?existing.createdAt:Date.now()
   };
   if(isNew){tasks=tasks.concat([task]);addLog("created","Tarefa criada: "+name,task.id);}
@@ -1693,6 +1726,7 @@ function initDarkMode(){
   if(saved==='1')document.documentElement.classList.add('dark');
   updateDarkBtn();
 }
+initDarkMode();
 function toggleDarkMode(){
   var isDark=document.documentElement.classList.toggle('dark');
   localStorage.setItem('darkMode',isDark?'1':'0');
@@ -1907,7 +1941,10 @@ function taskInWeek(t,range){
   return dl>=range.start&&dl<=range.end;
 }
 function setViewMode(mode){
-  viewMode=mode;render();
+  viewMode=mode;
+  document.getElementById('view-todos').classList.toggle('active',mode==='todos');
+  document.getElementById('view-semanal').classList.toggle('active',mode==='semanal');
+  render();
 }
 function applyViewFilter(list){
   if(viewMode!=='semanal')return list;
@@ -2010,11 +2047,13 @@ function saveNota(){
   var title=document.getElementById('f-nota-title').value.trim()||'Sem título';
   var content=document.getElementById('nota-editor').innerHTML.trim();
   var projId=document.getElementById('f-nota-proj').value||null;
+  var dueDate=document.getElementById('f-nota-date').value;
+  if(!dueDate){alert('Informe um prazo de entrega para a nota.');return;}
   var u=nowUser();
   var isNew=!editNotaId;
   var nota={
     id:editNotaId||'n'+Date.now(),
-    title:title,content:content,projId:projId,
+    title:title,content:content,projId:projId,dueDate:dueDate,
     sharedWith:[...selectedSharedIds],
     ownerEmail:isNew?u.email:(notas.find(function(x){return x.id===editNotaId;})||{}).ownerEmail||u.email,
     createdAt:isNew?Date.now():(notas.find(function(x){return x.id===editNotaId;})||{}).createdAt||Date.now(),
