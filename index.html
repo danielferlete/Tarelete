@@ -1346,7 +1346,7 @@ function refreshDayTaskList(){
     if(!t.date)return false;
     var start=t.startDate||t.date;
     return ds>=start&&ds<=t.date;
-  });
+  }).filter(calMatchesTask);
   var html=dayTasks.map(taskCardHTML).join("");
   var reunForDay=applyAccessFilterReun(reunioes).filter(function(r){return r.date===ds;});
   reunForDay.forEach(function(r){
