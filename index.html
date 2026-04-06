@@ -200,6 +200,7 @@ html.dark .modal-tab.active{color:var(--text-primary);}
 html.dark .divider{border-color:var(--border);}
 html.dark .btn{color:var(--text-primary);border-color:var(--border);}
 html.dark .btn:hover{background:var(--bg-tertiary);}
+html.dark .btn-primary{color:#1a1a1a !important;}
 html.dark .sort-btn{color:var(--text-secondary);border-color:var(--border);}
 html.dark .sort-btn.active{background:var(--chip-active);color:var(--text-primary);}
 html.dark .nav-tab{color:var(--text-secondary);}
@@ -275,7 +276,6 @@ html.dark .reun-participant-chip.selected{background:#1e3a5f;color:#bfdbfe;}
       <button class="btn" onclick="openModal('projeto')">+ Projeto</button>
       <button class="btn" onclick="openModal('atribuicao')">+ Atribuição</button>
       <button class="btn" onclick="openModal('reuniao')">+ Reunião</button>
-      <button class="btn" onclick="exportExcel()" title="Exportar tarefas filtradas">⬇ Excel</button>
       <div class="tooltip-wrap">
         <button class="btn btn-primary" onclick="openModal('tarefa')">+ Nova tarefa</button>
         <span class="tooltip-text">Nova Tarelete</span>
@@ -1683,24 +1683,23 @@ function getWeekRange(){
   return{start:toS(sun),end:toS(sat)};
 }
 function taskInWeek(t,range){
-  // task touches the week if:
-  // 1. deadline (t.date) is within the week, OR
-  // 2. task spans the week (startDate <= range.end AND date >= range.start)
   var dl=t.date||'';
-  var sd=t.startDate||dl;
   if(!dl)return false;
-  // single day task: deadline in range
-  if(sd===dl) return dl>=range.start&&dl<=range.end;
-  // multi-day: overlaps range
-  return sd<=range.end&&dl>=range.start;
+  // Determine effective start date
+  // startDate is auto-set to today when task is created
+  // so we need to check if it's meaningfully different from deadline
+  var sd=t.startDate||dl;
+  var isMultiDay=(sd&&sd!==dl&&sd!=='');
+  if(isMultiDay){
+    // Multi-day task: show if it overlaps with the current week at all
+    // (starts before or during week AND ends during or after week start)
+    return sd<=range.end&&dl>=range.start;
+  }
+  // Single-day task (only deadline): show if deadline is this week
+  return dl>=range.start&&dl<=range.end;
 }
 function setViewMode(mode){
-  viewMode=mode;
-  ['todos','semanal'].forEach(function(m){
-    var b=document.getElementById('view-'+m);
-    if(b)b.classList.toggle('active',m===mode);
-  });
-  render();
+  viewMode=mode;render();
 }
 function applyViewFilter(list){
   if(viewMode!=='semanal')return list;
@@ -1709,6 +1708,8 @@ function applyViewFilter(list){
 }
 
 </script>
+
+
 
 
 
