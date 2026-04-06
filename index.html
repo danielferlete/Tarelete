@@ -885,9 +885,15 @@ function toggleClPopup(clId){
 
 // ============================================================
 // LOG
-// ==============================================color:var(--text-primary)esSection();
-  renderLog();
-  setTimeout(initDrag,0);
+// ============================================================
+// LOG
+// ============================================================
+function logItemHTML(l){
+  return '<div class="log-item"><div class="log-item-header"><span class="log-badge '+(LOG_BADGES[l.type]||"edited")+'">'+(LOG_LABELS[l.type]||l.type)+'</span><span class="log-user">'+esc(l.user)+'</span><span class="log-time">'+fmtTs(l.ts)+'</span></div><div class="log-detail">'+esc(l.detail)+"</div></div>";
+}
+function renderLog(){
+  var el=document.getElementById("log-list");if(!el)return;
+  el.innerHTML=logEntries.length?logEntries.map(logItemHTML).join(""):'<div class="empty">Nenhuma alteração registrada ainda.</div>';
 }
 
 function toggleDone(id){
