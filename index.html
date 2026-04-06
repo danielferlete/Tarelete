@@ -183,7 +183,7 @@ html.dark .stat{background:var(--stat-bg);}
 html.dark .chip{border-color:var(--border);color:var(--text-secondary);}
 html.dark .chip.active{background:var(--chip-active);color:var(--text-primary);border-color:#555;}
 html.dark .concluded-bar{background:var(--bg-secondary);border-color:var(--border);}
-html.dark .reun-card{background:var(--bg-secondary);border-color:var(--border);}
+html.dark .reun-card{background:var(--bg-secondary);border-color:var(--border);color:var(--text-primary);}
 html.dark .drawer{background:var(--drawer-bg);border-color:var(--border);}
 html.dark .drawer-header{border-color:var(--border);}
 html.dark .chat-msg{background:var(--chat-msg-bg);color:var(--chat-msg-color);}
@@ -885,6 +885,55 @@ function toggleClPopup(clId){
 
 // ============================================================
 // LOG
+// ==============================================color:var(--text-primary)esSection();
+  renderLog();
+  setTimeout(initDrag,0);
+}
+
+function toggleDone(id){
+  var t=tasks.find(function(x){return x.id===id;});if(!t)return;
+  var nd=!t.done;
+  tasks=tasks.map(function(x){return x.id===id?Object.assign({},x,{done:nd}):x;});
+  addLog(nd?"completed":"reopened","Tarefa "+(nd?"concluída":"reaberta")+": "+t.name,id);
+  saveAll();render();renderCal();
+}
+function toggleConcluded(){concludedOpen=!concludedOpen;render();}
+
+// ============================================================
+// CHECKLIST POPUP
+// ============================================================
+function openClPopup(taskId){
+  clPopupTaskId=taskId;
+  var t=tasks.find(function(x){return x.id===taskId;});if(!t)return;
+  var cl=t.checklist||[];
+  document.getElementById("cl-popup-title").textContent=esc(t.name);
+  renderClPopupItems(cl);
+  document.getElementById("modal-cl-popup").style.display="flex";
+}
+function renderClPopupItems(cl){
+  var el=document.getElementById("cl-popup-list");if(!el)return;
+  el.innerHTML=cl.length?cl.map(function(c){
+    return '<div class="cl-popup-item" onclick="toggleClPopup(\''+c.id+'\')">'+
+      '<div class="card-cl-box'+(c.done?" checked":"")+'" >'+(c.done?"✓":"")+"</div>"+
+      '<span style="'+(c.done?"text-decoration:line-through;color:#aaa;":"")+' font-size:13px">'+esc(c.text)+"</span>"+
+      "</div>";
+  }).join(""):'<div class="empty">Nenhum item no checklist.</div>';
+}
+function toggleClPopup(clId){
+  if(!clPopupTaskId)return;
+  tasks=tasks.map(function(t){
+    if(t.id!==clPopupTaskId)return t;
+    var checklist=(t.checklist||[]).map(function(c){return c.id===clId?Object.assign({},c,{done:!c.done}):c;});
+    return Object.assign({},t,{checklist:checklist});
+  });
+  saveAll();render();
+  // refresh popup
+  var t=tasks.find(function(x){return x.id===clPopupTaskId;});
+  if(t)renderClPopupItems(t.checklist||[]);
+}
+
+// ============================================================
+// LOG
 // ============================================================
 var LOG_LABELS={created:"Criada",edited:"Editada",deleted:"Excluída",comment:"Comentário",checklist:"Checklist",completed:"Concluída",reopened:"Reaberta",reun_created:"Reunião criada",reun_edited:"Reunião editada",reun_deleted:"Reunião excluída"};
 var LOG_BADGES={created:"created",edited:"edited",deleted:"deleted",comment:"comment",checklist:"checklist",completed:"edited",reopened:"edited",reun_created:"created",reun_edited:"edited",reun_deleted:"deleted"};
@@ -1455,7 +1504,7 @@ function renderReunioesSection(){
     var gcal=buildGCalLink(r);
     var projColor=proj&&proj.color?proj.color:"#7F77DD";
     var h='<div class="reun-card" style="border-left-color:'+projColor+";"+'" onclick="openEditReuniao(\''+r.id+'\')">';
-    h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:10px;padding:1px 7px;border-radius:8px;background:'+hexAlpha(projColor,.12)+';color:'+projColor+';font-weight:500">Reunião</span><span style="font-size:14px;font-weight:500;color:#1a1a1a">'+esc(r.title)+"</span></div>";
+    h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:10px;padding:1px 7px;border-radius:8px;background:'+hexAlpha(projColor,.12)+';color:'+projColor+';font-weight:500">Reunião</span><span style="font-size:14px;font-weight:500;color:var(--text-primary)">'+esc(r.title)+"</span></div>";
     h+='<div class="reun-card-meta"><span class="reun-badge">'+fmtReunDate(r)+"</span>"+(proj?'<span class="sep">·</span><span class="meta-item">'+esc(proj.name)+"</span>":"")+"</div>";
     if(participants.length)h+='<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">'+participants.map(function(a){return'<span style="font-size:11px;padding:2px 7px;border-radius:10px;background:'+hexAlpha(a.color||"#7F77DD",.12)+';color:'+(a.color||"#7F77DD")+'">'+esc(a.name)+"</span>";}).join("")+"</div>";
     if(r.desc)h+='<div style="font-size:12px;color:#888;margin-top:5px;line-height:1.4">'+esc(r.desc)+"</div>";
