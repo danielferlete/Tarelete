@@ -1448,7 +1448,7 @@ function openEditTask(id){
   document.getElementById("f-date").value=t.date||"";
   document.getElementById("f-prio").value=t.prio;
   document.getElementById("date-error").style.display="none";
-  document.getElementById("task-del-btn").style.display="block";
+  document.getElementById("task-del-btn").style.display=isAdmin()?"block":"none";
   document.getElementById("comment-count-badge").textContent=(t.comments||[]).length?"("+(t.comments||[]).length+")":"";
   document.getElementById("cl-badge").textContent=clItems.length?"("+clItems.length+")":"";
   populateProjSel(t.projId||(t.projIds&&t.projIds[0]));
@@ -1494,6 +1494,7 @@ function saveTask(){
 }
 function deleteTask(){
   if(!editTaskId)return;
+  if(!isAdmin()){alert("Apenas o administrador pode excluir tarefas.");return;}
   var t=tasks.find(function(x){return x.id===editTaskId;});
   addLog("deleted","Tarefa excluída: "+(t?t.name:""),editTaskId);
   tasks=tasks.filter(function(t){return t.id!==editTaskId;});
@@ -1945,21 +1946,39 @@ function populateNotaProj(){
 function renderNotaShare(){
   var el=document.getElementById('nota-share-list');if(!el)return;
   var u=nowUser();
-  // show all atribuicoes except current user
-  var others=atribuicoes.filter(function(a){return !a.email||a.email.toLowerCase()!==u.email.toLowerCase();});
-  if(!others.length){el.innerHTML='<div style="font-size:12px;color:var(--text-secondary)">Nenhuma pessoa cadastrada para compartilhar.</div>';return;}
-  el.innerHTML=others.map(function(a){
-    var sel=selectedSharedIds.includes(a.id);
-    return '<button type="button" class="reun-participant-chip'+(sel?' selected':'')+'" onclick="toggleNoteShare(\''+a.id+'\')">'+
-      '<span style="width:8px;height:8px;border-radius:50%;background:'+(a.color||'#7F77DD')+';display:inline-block;margin-right:4px"></span>'+
-      esc(a.name)+'</button>';
-  }).join('');
+  var nota=editNotaId?notas.find(function(x){return x.id===editNotaId;}):null;
+  var ownerEmail=(nota&&nota.ownerEmail?nota.ownerEmail:u.email)||ADMIN_EMAIL_JS;
+  var isOwner=ownerEmail.toLowerCase()===u.email.toLowerCase();
+  if(isOwner){
+    // Dono: pode atribuir/desatribuir qualquer pessoa
+    var others=atribuicoes.filter(function(a){return !a.email||a.email.toLowerCase()!==u.email.toLowerCase();});
+    if(!others.length){el.innerHTML='<div style="font-size:12px;color:var(--text-secondary)">Nenhuma pessoa cadastrada para compartilhar.</div>';return;}
+    el.innerHTML=others.map(function(a){
+      var sel=selectedSharedIds.includes(a.id);
+      return '<button type="button" class="reun-participant-chip'+(sel?' selected':'')+'" onclick="toggleNoteShare(\''+a.id+'\')">'+
+        '<span style="width:8px;height:8px;border-radius:50%;background:'+(a.color||'#7F77DD')+';display:inline-block;margin-right:4px"></span>'+
+        esc(a.name)+'</button>';
+    }).join('');
+  } else {
+    // Convidado: só pode remover a própria atribuição
+    var myAtrib=getMyAtrib();
+    if(!myAtrib){el.innerHTML='<div style="font-size:12px;color:var(--text-secondary)">Você não pode alterar o compartilhamento desta nota.</div>';return;}
+    el.innerHTML='<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">Somente o dono pode adicionar pessoas. Você pode sair da nota:</div>'+
+      '<button type="button" class="reun-participant-chip selected" onclick="leaveNota(\''+myAtrib.id+'\')">'+
+      '<span style="width:8px;height:8px;border-radius:50%;background:'+(myAtrib.color||'#7F77DD')+';display:inline-block;margin-right:4px"></span>'+
+      esc(myAtrib.name)+' ✕</button>';
+  }
 }
 
 function toggleNoteShare(id){
   var i=selectedSharedIds.indexOf(id);
   if(i>=0)selectedSharedIds.splice(i,1);else selectedSharedIds.push(id);
   renderNotaShare();
+}
+
+function leaveNota(atribId){
+  selectedSharedIds=selectedSharedIds.filter(function(x){return x!==atribId;});
+  saveNota();
 }
 
 function openNota(){
