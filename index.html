@@ -639,14 +639,9 @@ function autoSelectProjects(){
   // find atribuicao matching current user email
   var myAtrib=atribuicoes.find(function(a){return a.email&&a.email.toLowerCase()===u.email.toLowerCase();});
   if(!myAtrib)return;
-  // find tasks assigned to this user
-  var myTasks=tasks.filter(function(t){
-    var ids=t.atribIds||(t.respId?[t.respId]:[]);
-    return ids.includes(myAtrib.id);
-  });
-  // collect unique project ids
-  var myProjIds=[...new Set(myTasks.map(function(t){return t.projId||(t.projIds&&t.projIds[0]);}).filter(Boolean))];
-  if(myProjIds.length){filterProjs=myProjIds.slice();}
+  // pre-select this user's atribuicao in both task and calendar filters
+  filterAtribs=[myAtrib.id];
+  calFilterAtribs=[myAtrib.id];
 }
 
 // ============================================================
@@ -1383,5 +1378,6 @@ window.addEventListener("app-init",function(){
 });
 
 </script>
+
 </body>
 </html>
