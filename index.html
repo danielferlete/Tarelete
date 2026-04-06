@@ -272,10 +272,10 @@ html.dark .reun-participant-chip.selected{background:#1e3a5f;color:#bfdbfe;}
   <div class="header">
     <span class="title">Minhas entregas</span>
     <div class="hbtns">
-      <button class="btn" onclick="openModal('empresa')">+ Empresa</button>
-      <button class="btn" onclick="openModal('projeto')">+ Projeto</button>
-      <button class="btn" onclick="openModal('atribuicao')">+ Atribuição</button>
-      <button class="btn" onclick="openModal('reuniao')">+ Reunião</button>
+      <button class="btn" id="btn-empresa" onclick="openModal('empresa')">+ Empresa</button>
+      <button class="btn" id="btn-projeto" onclick="openModal('projeto')">+ Projeto</button>
+      <button class="btn" id="btn-atribuicao" onclick="openModal('atribuicao')">+ Atribuição</button>
+      <button class="btn" id="btn-reuniao" onclick="openModal('reuniao')">+ Reunião</button>
       <div class="tooltip-wrap">
         <button class="btn btn-primary" onclick="openModal('tarefa')">+ Nova tarefa</button>
         <span class="tooltip-text">Nova Tarelete</span>
@@ -789,8 +789,8 @@ function taskCardHTML(t){
 }
 
 function render(){
-  var open=tasks.filter(function(t){return!t.done;});
-  var done=tasks.filter(function(t){return t.done;});
+  var open=applyAccessFilter(tasks.filter(function(t){return!t.done;}));
+  var done=applyAccessFilter(tasks.filter(function(t){return t.done;}));
   var filteredOpen=open.filter(matchesFilters);
   var todayCount=filteredOpen.filter(function(t){return t.date&&daysDiff(t.date)===0;}).length;
   var overdueCount=filteredOpen.filter(function(t){return t.date&&daysDiff(t.date)<0;}).length;
@@ -1091,7 +1091,7 @@ function calMatchesTask(t){
 function renderCal(){
   document.getElementById("cal-title").textContent=MONTHS[calMonth]+" "+calYear;
   var tStr=todayStr();
-  var open=tasks.filter(function(t){return!t.done&&t.date;});
+  var open=applyAccessFilter(tasks).filter(function(t){return!t.done&&t.date;});
   var allEmpIds=[...new Set(open.map(function(t){var e=getEmpresaOfTask(t);return e?e.id:null;}).filter(Boolean))];
   var allProjIds=[...new Set(open.map(function(t){return t.projId||(t.projIds&&t.projIds[0]);}).filter(Boolean))];
   var allAtribIds=[...new Set(open.flatMap(function(t){return t.atribIds||(t.respId?[t.respId]:[]);}))];
@@ -1163,7 +1163,7 @@ function renderCal(){
   for(var i2=1;i2<=rem;i2++)html+='<div class="cal-cell other-month"><div class="cal-date">'+i2+"</div></div>";
   document.getElementById("cal-grid").innerHTML=html;
   // inject reunioes (including recurring)
-  var allReunForCal=reunioes.concat(expandRecurringMeetings());
+  var allReunForCal=applyAccessFilterReun(reunioes).concat(expandRecurringMeetings().filter(function(r){return applyAccessFilterReun([r]).length>0;}));
   var seenReunIds={};
   allReunForCal=allReunForCal.filter(function(r){
     if(r._isRecurInstance)return true;
@@ -1249,6 +1249,8 @@ function openDayModal(dateStr,idsStr){
 // MODALS
 // ============================================================
 function openModal(type){
+  // block non-admins from admin-only sections
+  if(!isAdmin()&&(type==="empresa"||type==="projeto"||type==="atribuicao"))return;
   if(type==="empresa"){renderEmpresaList();document.getElementById("f-empresa-name").value="";}
   else if(type==="projeto"){
     editProjId=null;renderProjetoList();populateProjCompany();
@@ -1401,6 +1403,7 @@ function openEditTask(id){
   populateProjSel(t.projId||(t.projIds&&t.projIds[0]));
   renderAtribPicker();
   switchTab("detalhes");
+
   document.getElementById("modal-tarefa").style.display="flex";
 }
 function saveTask(){
@@ -1495,7 +1498,8 @@ function fmtReunDate(r){
 }
 function renderReunioesSection(){
   var el=document.getElementById("reunioes-list");if(!el)return;
-  var filtered=reunioes.filter(function(r){
+  var reunioesVisible=applyAccessFilterReun(reunioes);
+  var filtered=reunioesVisible.filter(function(r){
     // hide reuniões whose date has passed
     if(r.date&&r.date<todayStr())return false;
     if(filterProjs.length&&!filterProjs.includes(r.projId))return false;
@@ -1554,6 +1558,56 @@ function deleteReuniao(){
 // ============================================================
 // BOOT
 // ============================================================
+
+// ============================================================
+// ACCESS CONTROL
+// ============================================================
+var ADMIN_EMAIL='danielferlete@gmail.com';
+
+function isAdmin(){
+  var u=nowUser();
+  return u&&u.email&&u.email.toLowerCase()===ADMIN_EMAIL.toLowerCase();
+}
+
+function getMyAtrib(){
+  var u=nowUser();if(!u||u.email==='?')return null;
+  return atribuicoes.find(function(a){return a.email&&a.email.toLowerCase()===u.email.toLowerCase();});
+}
+
+function applyAccessFilter(list){
+  // Admin sees all
+  if(isAdmin())return list;
+  var myAtrib=getMyAtrib();
+  if(!myAtrib)return []; // not found in atribuicoes = sees nothing
+  return list.filter(function(t){
+    var ids=t.atribIds||(t.respId?[t.respId]:[]);
+    return ids.includes(myAtrib.id);
+  });
+}
+
+function applyAccessFilterReun(list){
+  if(isAdmin())return list;
+  var myAtrib=getMyAtrib();
+  if(!myAtrib)return [];
+  return list.filter(function(r){
+    return (r.participants||[]).includes(myAtrib.id);
+  });
+}
+
+function applyUIAccess(){
+  var admin=isAdmin();
+  // Show/hide admin-only buttons
+  var adminBtns=['btn-empresa','btn-projeto','btn-atribuicao'];
+  adminBtns.forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.style.display=admin?'':'none';
+  });
+  // Hide sort/filter controls for non-admins? No, keep filters
+  // Hide log tab for non-admins
+  var logTab=document.querySelector('.nav-tab[onclick*="log"]');
+  if(logTab)logTab.style.display=admin?'':'none';
+}
+
 window.addEventListener("app-init",function(){
   var d=window._initialData||{};
   empresas=d.empresas||[];projetos=d.projetos||[];
@@ -1561,7 +1615,7 @@ window.addEventListener("app-init",function(){
   atribuicoes=d.atribuicoes||d.responsaveis||[];
   tasks=d.tasks||[];logEntries=d.logEntries||[];reunioes=d.reunioes||[];
   autoSelectProjects();
-  render();renderCal();
+  render();renderCal();applyUIAccess();
 });
 
 // ============================================================
