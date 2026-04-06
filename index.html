@@ -421,7 +421,7 @@ html.dark .tooltip-wrap .tooltip-text{background:#f0f0f0;color:#1a1a1a;}
 
 <!-- MODAL DIA -->
 <div id="modal-day" class="modal-bg" style="display:none" onclick="if(event.target===this)this.style.display='none'">
-  <div class="modal" style="max-width:560px;overflow-y:auto" onclick="event.stopPropagation()">
+  <div class="modal" style="max-width:720px;overflow-y:auto" onclick="event.stopPropagation()">
     <div class="modal-body">
       <div class="modal-title" id="day-modal-title"></div>
       <div id="day-task-list"></div>
@@ -766,6 +766,7 @@ var clItems=[];
 var calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
 // checklist popup
 var clPopupTaskId=null;
+var dayModalDateStr=null;
 
 function saveAll(){window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes});}
 
@@ -976,7 +977,7 @@ function toggleDone(id){
   var nd=!t.done;
   tasks=tasks.map(function(x){return x.id===id?Object.assign({},x,{done:nd}):x;});
   addLog(nd?"completed":"reopened","Tarefa "+(nd?"concluída":"reaberta")+": "+t.name,id);
-  saveAll();render();renderCal();
+  saveAll();render();renderCal();refreshDayTaskList();
 }
 function toggleConcluded(){concludedOpen=!concludedOpen;render();}
 
@@ -1007,7 +1008,7 @@ function toggleClPopup(clId){
     var checklist=(t.checklist||[]).map(function(c){return c.id===clId?Object.assign({},c,{done:!c.done}):c;});
     return Object.assign({},t,{checklist:checklist});
   });
-  saveAll();render();
+  saveAll();render();refreshDayTaskList();
   // refresh popup
   var t=tasks.find(function(x){return x.id===clPopupTaskId;});
   if(t)renderClPopupItems(t.checklist||[]);
@@ -1263,25 +1264,34 @@ function calFE(v){toggleArr(calFilterEmpresas,v);renderCal();}
 function calFP(v){toggleArr(calFilterProjs,v);renderCal();}
 function calFA(v){toggleArr(calFilterAtribs,v);renderCal();}
 
-function openDayModal(dateStr,idsStr){
-  var ids=idsStr?idsStr.split(",").filter(Boolean):[];
-  var reunForDay=reunioes.filter(function(r){return r.date===dateStr;});
-  if(!ids.length&&!reunForDay.length)return;
-  var parts=dateStr.split("-");
-  document.getElementById("day-modal-title").textContent=parseInt(parts[2])+" de "+MONTHS[parseInt(parts[1])-1]+" de "+parts[0];
-  var dayTasks=ids.map(function(id){return tasks.find(function(t){return t.id===id;});}).filter(Boolean);
-  var html=dayTasks.map(function(t){
-    var pid=t.projId||(t.projIds&&t.projIds[0]);
-    var proj=getProjById(pid),projColor=proj&&proj.color?proj.color:"#e0e0e0";
-    var tatribs=getTaskAtribs(t);
-    var cl=t.checklist||[],clDone=cl.filter(function(c){return c.done;}).length;
-    return '<div class="day-task-item" style="border-left-color:'+projColor+'" onclick="document.getElementById(\'modal-day\').style.display=\'none\';openEditTask(\''+t.id+'\')"><div class="day-task-name">'+esc(t.name)+'</div><div class="day-task-meta">'+(proj?esc(proj.name):"")+(tatribs.length?" · "+tatribs.map(function(a){return a.name;}).join(", "):"")+(cl.length?" · ☑ "+clDone+"/"+cl.length:"")+"</div></div>";
-  }).join("");
+function refreshDayTaskList(){
+  if(!dayModalDateStr)return;
+  var el=document.getElementById("day-task-list");if(!el)return;
+  var modal=document.getElementById("modal-day");
+  if(!modal||modal.style.display==="none")return;
+  var ds=dayModalDateStr;
+  var dayTasks=applyAccessFilter(tasks).filter(function(t){
+    if(!t.date)return false;
+    var start=t.startDate||t.date;
+    return ds>=start&&ds<=t.date;
+  });
+  var html=dayTasks.map(taskCardHTML).join("");
+  var reunForDay=applyAccessFilterReun(reunioes).filter(function(r){return r.date===ds;});
   reunForDay.forEach(function(r){
     var proj=getProjById(r.projId),projColor=proj&&proj.color?proj.color:"#7F77DD";
     html+='<div class="day-task-item" style="border-left-color:'+projColor+'" onclick="document.getElementById(\'modal-day\').style.display=\'none\';openEditReuniao(\''+r.id+'\')"><div class="day-task-name">&#128197; '+esc(r.title)+'</div><div class="day-task-meta">'+(r.start?r.start:"")+(r.end?" – "+r.end:"")+(proj?" · "+esc(proj.name):"")+"</div></div>";
   });
-  document.getElementById("day-task-list").innerHTML=html;
+  el.innerHTML=html;
+}
+
+function openDayModal(dateStr,idsStr){
+  var ids=idsStr?idsStr.split(",").filter(Boolean):[];
+  var reunForDay=applyAccessFilterReun(reunioes).filter(function(r){return r.date===dateStr;});
+  if(!ids.length&&!reunForDay.length)return;
+  var parts=dateStr.split("-");
+  document.getElementById("day-modal-title").textContent=parseInt(parts[2])+" de "+MONTHS[parseInt(parts[1])-1]+" de "+parts[0];
+  dayModalDateStr=dateStr;
+  refreshDayTaskList();
   document.getElementById("modal-day").style.display="flex";
 }
 
