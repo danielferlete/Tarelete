@@ -1077,17 +1077,25 @@ function removeClItem(i){clItems.splice(i,1);renderClItems();}
 // ATRIBUICAO MULTISELECT in task modal
 // ============================================================
 var selectedAtribIds=[];
+var originalAtribIds=[]; // atribs locked when editing existing task
+
 function renderAtribPicker(){
   var el=document.getElementById("f-atrib-picker");if(!el)return;
   if(!atribuicoes.length){el.innerHTML='<div style="font-size:13px;color:#aaa">Nenhuma atribuição cadastrada.</div>';return;}
   el.innerHTML=atribuicoes.map(function(a){
     var sel=selectedAtribIds.includes(a.id);
-    return '<button type="button" class="reun-participant-chip'+(sel?" selected":"")+'" onclick="toggleAtribPick(\''+a.id+'\')">'+
+    var isOriginal=originalAtribIds.includes(a.id);
+    var locked=isOriginal&&editTaskId; // locked if original and editing existing task
+    var btnAttrs=locked?'style="opacity:1;cursor:default" title="Atribuição original"':'onclick="toggleAtribPick(\''+a.id+'\')"';
+    return '<button type="button" class="reun-participant-chip'+(sel?" selected":"")+'" '+btnAttrs+'>'+
       '<span style="width:8px;height:8px;border-radius:50%;background:'+(a.color||"#7F77DD")+';display:inline-block;margin-right:4px"></span>'+
-      esc(a.name)+"</button>";
+      esc(a.name)+(locked?' 🔒':'')+
+      "</button>";
   }).join("");
 }
 function toggleAtribPick(id){
+  // never allow removing original atribs
+  if(originalAtribIds.includes(id)&&editTaskId)return;
   var i=selectedAtribIds.indexOf(id);if(i>=0)selectedAtribIds.splice(i,1);else selectedAtribIds.push(id);
   renderAtribPicker();
 }
@@ -1172,13 +1180,13 @@ function renderCal(){
       var tatribs=getTaskAtribs(t);
       var rc=tatribs.length&&tatribs[0].color?tatribs[0].color:"transparent";
       var cls="cal-span"+(obj.isStart?" span-start":obj.isEnd?" span-end":" span-mid");
-      inner+='<div class="'+cls+'" style="background:'+c2+'" onclick="openEditTask(\''+t.id+'\')" title="'+esc(t.name)+'"><span class="cal-chip-resp" style="background:'+rc+'"></span>'+(obj.isStart?esc(t.name):obj.isEnd?"⬤":"")+"</div>";
+      inner+='<div class="'+cls+'" style="background:'+c2+'" onclick="event.stopPropagation()" title="'+esc(t.name)+'"><span class="cal-chip-resp" style="background:'+rc+'"></span>'+(obj.isStart?esc(t.name):obj.isEnd?"⬤":"")+"</div>";
     });
     deadlineMap[d].slice(0,2).forEach(function(t){
       var c2=getProjColor(t.projId||(t.projIds&&t.projIds[0]));
       var tatribs=getTaskAtribs(t);
       var rc=tatribs.length&&tatribs[0].color?tatribs[0].color:"transparent";
-      inner+='<div class="cal-chip" style="background:'+c2+'" onclick="openEditTask(\''+t.id+'\')" title="'+esc(t.name)+'"><span class="cal-chip-resp" style="background:'+rc+'"></span>'+esc(t.name)+"</div>";
+      inner+='<div class="cal-chip" style="background:'+c2+'" onclick="event.stopPropagation()" title="'+esc(t.name)+'"><span class="cal-chip-resp" style="background:'+rc+'"></span>'+esc(t.name)+"</div>";
     });
     var extra=(spanMap[d].length>2?spanMap[d].length-2:0)+(deadlineMap[d].length>2?deadlineMap[d].length-2:0);
     if(extra>0)inner+='<div style="font-size:9px;color:#aaa">+'+extra+" mais</div>";
@@ -1293,7 +1301,7 @@ function openModal(type){
     renderColorPicker("atrib-color-picker","f-atrib-color","#7F77DD");
   }
   else if(type==="tarefa"){
-    editTaskId=null;clItems=[];selectedAtribIds=[];
+    editTaskId=null;clItems=[];selectedAtribIds=[];originalAtribIds=[];
     document.getElementById("task-modal-title").textContent="Nova tarefa";
     ["f-name","f-task-desc","f-start-date","f-date"].forEach(function(id){document.getElementById(id).value="";});
     document.getElementById("f-prio").value="media";
@@ -1415,6 +1423,7 @@ function openEditTask(id){
   var t=tasks.find(function(x){return x.id===id;});if(!t)return;
   editTaskId=id;clItems=JSON.parse(JSON.stringify(t.checklist||[]));
   selectedAtribIds=[...(t.atribIds||(t.respId?[t.respId]:[]))];
+  originalAtribIds=[...(t.atribIds||(t.respId?[t.respId]:[]))]; // lock originals
   document.getElementById("task-modal-title").textContent="Editar tarefa";
   document.getElementById("f-name").value=t.name;
   document.getElementById("f-task-desc").value=t.desc||"";
