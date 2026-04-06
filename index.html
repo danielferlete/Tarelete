@@ -918,8 +918,9 @@ function taskCardHTML(t){
 }
 
 function render(){
-  var open=tasks.filter(function(t){return!t.done;});
-  var done=tasks.filter(function(t){return t.done;});
+  var accessTasks=applyAccessFilter(tasks);
+  var open=accessTasks.filter(function(t){return!t.done;});
+  var done=accessTasks.filter(function(t){return t.done;});
   var filteredOpen=open.filter(matchesFilters);
   var todayCount=filteredOpen.filter(function(t){return t.date&&daysDiff(t.date)===0;}).length;
   var overdueCount=filteredOpen.filter(function(t){return t.date&&daysDiff(t.date)<0;}).length;
@@ -1165,7 +1166,7 @@ function calMatchesTask(t){
 function renderCal(){
   document.getElementById("cal-title").textContent=MONTHS[calMonth]+" "+calYear;
   var tStr=todayStr();
-  var open=tasks.filter(function(t){return!t.done&&t.date;});
+  var open=applyAccessFilter(tasks).filter(function(t){return!t.done&&t.date;});
   var allEmpIds=[...new Set(open.map(function(t){var e=getEmpresaOfTask(t);return e?e.id:null;}).filter(Boolean))];
   var allProjIds=[...new Set(open.map(function(t){return t.projId||(t.projIds&&t.projIds[0]);}).filter(Boolean))];
   var allAtribIds=[...new Set(open.flatMap(function(t){return t.atribIds||(t.respId?[t.respId]:[]);}))];
@@ -1536,7 +1537,7 @@ function fmtReunDate(r){
 }
 function renderReunioesSection(){
   var el=document.getElementById("reunioes-list");if(!el)return;
-  var filtered=reunioes.filter(function(r){
+  var filtered=applyAccessFilterReun(reunioes).filter(function(r){
     if(filterProjs.length&&!filterProjs.includes(r.projId))return false;
     if(filterEmpresas.length){var p=getProjById(r.projId);var emp=p?getEmpresaById(p.companyId):null;if(!emp||!filterEmpresas.includes(emp.id))return false;}
     return true;
@@ -1711,7 +1712,7 @@ function renderSearchResults(q){
   if(!q){el.innerHTML='';el.style.display='none';return;}
   var results=[];
   // tasks
-  tasks.forEach(function(t){
+  applyAccessFilter(tasks).forEach(function(t){
     if(t.name.toLowerCase().includes(q)||( t.desc&&t.desc.toLowerCase().includes(q))){
       var proj=getProjById(t.projId);
       results.push({type:'tarefa',icon:'✓',label:t.name,sub:proj?proj.name:'',id:t.id});
@@ -1724,7 +1725,7 @@ function renderSearchResults(q){
     }
   });
   // reunioes
-  reunioes.forEach(function(r){
+  applyAccessFilterReun(reunioes).forEach(function(r){
     if(r.title.toLowerCase().includes(q)||(r.desc&&r.desc.toLowerCase().includes(q))){
       results.push({type:'reuniao',icon:'📅',label:r.title,sub:fmtReunDate(r),id:r.id});
     }
