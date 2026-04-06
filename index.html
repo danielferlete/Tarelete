@@ -1680,6 +1680,7 @@ window.addEventListener("app-init",function(){
   atribuicoes=d.atribuicoes||d.responsaveis||[];
   tasks=d.tasks||[];logEntries=d.logEntries||[];reunioes=d.reunioes||[];notas=d.notas||[];
   autoSelectProjects();
+  applyUIAccess();
   render();renderCal();renderNotasPage();
 });
 
