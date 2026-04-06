@@ -455,9 +455,9 @@ html.dark .reun-participant-chip.selected{background:#1e3a5f;color:#bfdbfe;}
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div class="form-row"><label class="form-label">Data de início</label><input class="form-input" type="date" id="f-start-date"/></div>
-          <div class="form-row"><label class="form-label">Prazo de entrega</label><input class="form-input" type="date" id="f-date"/></div>
+          <div class="form-row"><label class="form-label">Prazo de entrega <span style="color:#dc2626">*</span></label><input class="form-input" type="date" id="f-date"/></div>
         </div>
-        <div id="date-error" style="font-size:12px;color:#dc2626;margin-bottom:8px;display:none">O prazo não pode ser anterior ao início.</div>
+        <div id="date-error" style="font-size:12px;color:#dc2626;margin-bottom:8px;display:none"></div>
         <div class="form-row"><label class="form-label">Prioridade</label>
           <select class="form-input" id="f-prio">
             <option value="alta">Alta</option>
@@ -1085,7 +1085,7 @@ function renderAtribPicker(){
   el.innerHTML=atribuicoes.map(function(a){
     var sel=selectedAtribIds.includes(a.id);
     var isOriginal=originalAtribIds.includes(a.id);
-    var locked=isOriginal&&editTaskId; // locked if original and editing existing task
+    var locked=isOriginal&&editTaskId&&!isAdmin(); // locked only for non-admins
     var btnAttrs=locked?'style="opacity:1;cursor:default" title="Atribuição original"':'onclick="toggleAtribPick(\''+a.id+'\')"';
     return '<button type="button" class="reun-participant-chip'+(sel?" selected":"")+'" '+btnAttrs+'>'+
       '<span style="width:8px;height:8px;border-radius:50%;background:'+(a.color||"#7F77DD")+';display:inline-block;margin-right:4px"></span>'+
@@ -1094,8 +1094,8 @@ function renderAtribPicker(){
   }).join("");
 }
 function toggleAtribPick(id){
-  // never allow removing original atribs
-  if(originalAtribIds.includes(id)&&editTaskId)return;
+  // admin can always change freely; others cannot remove original atribs
+  if(!isAdmin()&&originalAtribIds.includes(id)&&editTaskId)return;
   var i=selectedAtribIds.indexOf(id);if(i>=0)selectedAtribIds.splice(i,1);else selectedAtribIds.push(id);
   renderAtribPicker();
 }
@@ -1431,7 +1431,7 @@ function openEditTask(id){
   document.getElementById("f-date").value=t.date||"";
   document.getElementById("f-prio").value=t.prio;
   document.getElementById("date-error").style.display="none";
-  document.getElementById("task-del-btn").style.display="block";
+  document.getElementById("task-del-btn").style.display=isAdmin()?"block":"none";
   document.getElementById("comment-count-badge").textContent=(t.comments||[]).length?"("+(t.comments||[]).length+")":"";
   document.getElementById("cl-badge").textContent=clItems.length?"("+clItems.length+")":"";
   populateProjSel(t.projId||(t.projIds&&t.projIds[0]));
@@ -1445,7 +1445,8 @@ function saveTask(){
   var startDate=document.getElementById("f-start-date").value;
   var date=document.getElementById("f-date").value;
   var errEl=document.getElementById("date-error");
-  if(startDate&&date&&date<startDate){errEl.style.display="block";return;}
+  if(!date){errEl.textContent="O prazo de entrega é obrigatório.";errEl.style.display="block";return;}
+  if(startDate&&date&&date<startDate){errEl.textContent="O prazo não pode ser anterior ao início.";errEl.style.display="block";return;}
   errEl.style.display="none";
   document.querySelectorAll(".cl-item-input").forEach(function(inp,i){if(clItems[i])clItems[i].text=inp.value;});
   var cleanCl=clItems.filter(function(c){return c.text.trim();});
@@ -1478,6 +1479,7 @@ function saveTask(){
 }
 function deleteTask(){
   if(!editTaskId)return;
+  if(!isAdmin()){alert("Apenas o administrador pode excluir tarefas.");return;}
   var t=tasks.find(function(x){return x.id===editTaskId;});
   addLog("deleted","Tarefa excluída: "+(t?t.name:""),editTaskId);
   tasks=tasks.filter(function(t){return t.id!==editTaskId;});
