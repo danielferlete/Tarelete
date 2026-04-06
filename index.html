@@ -710,8 +710,9 @@ window._googleSignIn = async function(){
 window._signOut = async function(){ await signOut(auth); };
 
 // Atomic save: read latest from Firestore, merge our changes, write back
-// Merge two arrays by id, keeping the item with the highest updatedAt
-function _mergeById(remote, local){
+// Merge two arrays by id, keeping the item with the highest updatedAt,
+// and filtering out anything that has been deleted (present in deletedIds).
+function _mergeById(remote, local, deleted){
   var map = {};
   (remote||[]).forEach(function(item){ map[item.id] = item; });
   (local||[]).forEach(function(item){
@@ -720,6 +721,10 @@ function _mergeById(remote, local){
       map[item.id] = item;
     }
   });
+  // Remove items that were explicitly deleted
+  if(deleted){
+    Object.keys(deleted).forEach(function(id){ delete map[id]; });
+  }
   return Object.values(map);
 }
 
@@ -732,18 +737,20 @@ window._fbSave = async function(data){
       // For arrays of domain objects, merge by id + updatedAt so concurrent
       // edits to different items are both preserved.
       const merged = Object.assign({}, remote, data);
-      ['tasks','reunioes','notas','logEntries','empresas','projetos','atribuicoes'].forEach(function(key){
-        if(remote[key] && data[key]){
-          // logEntries has no id conflicts worth merging — local wins (newest appended first)
-          if(key === 'logEntries'){
-            var remoteIds = new Set((remote[key]||[]).map(function(l){return l.id;}));
-            var newEntries = (data[key]||[]).filter(function(l){return !remoteIds.has(l.id);});
-            merged[key] = newEntries.concat(remote[key]||[]).slice(0,500);
-          } else {
-            merged[key] = _mergeById(remote[key], data[key]);
-          }
+      // Merge deletedIds maps (union of remote + local)
+      const mergedDeleted = Object.assign({}, remote.deletedIds||{}, data.deletedIds||{});
+      merged.deletedIds = mergedDeleted;
+      ['tasks','reunioes','notas','empresas','projetos','atribuicoes'].forEach(function(key){
+        if(remote[key] || data[key]){
+          merged[key] = _mergeById(remote[key], data[key], mergedDeleted);
         }
       });
+      // logEntries: append only new entries not already in remote
+      if(remote.logEntries || data.logEntries){
+        var remoteIds = new Set((remote.logEntries||[]).map(function(l){return l.id;}));
+        var newEntries = (data.logEntries||[]).filter(function(l){return !remoteIds.has(l.id);});
+        merged.logEntries = newEntries.concat(remote.logEntries||[]).slice(0,500);
+      }
       tx.set(ref, merged);
     });
   } catch(e){ console.error("Save error:",e); }
@@ -830,6 +837,7 @@ function isValidEmail(e){return/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e||"");}
 
 // Data
 var empresas=[],projetos=[],atribuicoes=[],tasks=[],logEntries=[],reunioes=[];
+var deletedIds={}; // {id: timestampMs} — tracks deleted items so merge doesn't resurface them
 
 // Filters
 var filterEmpresas=[],filterProjs=[],filterAtribs=[];
@@ -843,7 +851,7 @@ var calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
 var clPopupTaskId=null;
 var dayModalDateStr=null;
 
-function saveAll(){window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes});}
+function saveAll(){window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,deletedIds:deletedIds});}
 
 function addLog(type,detail,taskId,reunId){
   var u=nowUser();
@@ -1605,6 +1613,7 @@ function deleteTask(){
   if(!isAdmin()){alert("Apenas o administrador pode excluir tarefas.");return;}
   var t=tasks.find(function(x){return x.id===editTaskId;});
   addLog("deleted","Tarefa excluída: "+(t?t.name:""),editTaskId);
+  deletedIds[editTaskId]=Date.now();
   tasks=tasks.filter(function(t){return t.id!==editTaskId;});
   saveAll();closeModal("tarefa");render();renderCal();
 }
@@ -1787,7 +1796,7 @@ window.addEventListener("app-init",function(){
   empresas=d.empresas||[];projetos=d.projetos||[];
   // migrate: if old 'responsaveis' key exists, rename to atribuicoes
   atribuicoes=d.atribuicoes||d.responsaveis||[];
-  tasks=d.tasks||[];logEntries=d.logEntries||[];reunioes=d.reunioes||[];notas=d.notas||[];
+  tasks=d.tasks||[];logEntries=d.logEntries||[];reunioes=d.reunioes||[];notas=d.notas||[];deletedIds=d.deletedIds||{};
   autoSelectProjects();
   applyUIAccess();
   render();renderCal();renderNotasPage();
