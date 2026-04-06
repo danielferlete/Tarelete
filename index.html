@@ -1685,21 +1685,28 @@ function getWeekRange(){
 function taskInWeek(t,range){
   var dl=t.date||'';
   if(!dl)return false;
-  // Determine effective start date
-  // startDate is auto-set to today when task is created
-  // so we need to check if it's meaningfully different from deadline
   var sd=t.startDate||dl;
-  var isMultiDay=(sd&&sd!==dl&&sd!=='');
+  var isMultiDay=(sd&&sd!==''&&sd!==dl);
+  // Calculate next week range
+  var nextSun=new Date(range.end+'T00:00:00');
+  nextSun.setDate(nextSun.getDate()+1);
+  var nextSat=new Date(nextSun);
+  nextSat.setDate(nextSun.getDate()+6);
+  var nextStart=nextSun.toISOString().slice(0,10);
+  var nextEnd=nextSat.toISOString().slice(0,10);
   if(isMultiDay){
-    // Multi-day task: show if it overlaps with the current week at all
-    // (starts before or during week AND ends during or after week start)
-    return sd<=range.end&&dl>=range.start;
+    // overlaps this week OR starts this week and ends next week
+    return (sd<=range.end&&dl>=range.start)||(sd<=nextEnd&&dl>=nextStart);
   }
-  // Single-day task (only deadline): show if deadline is this week
-  return dl>=range.start&&dl<=range.end;
-}
-function setViewMode(mode){
-  viewMode=mode;render();
+  // Single deadline: this week OR next week
+  return (dl>=range.start&&dl<=range.end)||(dl>=nextStart&&dl<=nextEnd);
+}function setViewMode(mode){
+  viewMode=mode;
+  ['todos','semanal'].forEach(function(m){
+    var b=document.getElementById('view-'+m);
+    if(b)b.classList.toggle('active',m===mode);
+  });
+  render();
 }
 function applyViewFilter(list){
   if(viewMode!=='semanal')return list;
