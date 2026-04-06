@@ -665,14 +665,18 @@ const db = getFirestore(fbApp);
 const auth = getAuth(fbApp);
 const provider = new GoogleAuthProvider();
 
-const ADMIN_EMAILS = ["danielferlete@gmail.com"];
+async function loadConfig(){
+  try {
+    const snap = await getDoc(doc(db,"app","config"));
+    if(snap.exists()) return snap.data();
+  } catch(e){}
+  return {};
+}
 
-function isAdminEmail(email){ return ADMIN_EMAILS.includes((email||"").toLowerCase()); }
+function isAdminEmail(email){ return window._adminEmail && (email||"").toLowerCase()===window._adminEmail; }
 
 function isAuthorizedByAtribuicoes(email, data){
-  // Admin always authorized
   if(isAdminEmail(email)) return true;
-  // Check if email exists in atribuicoes (or old responsaveis)
   const atribs = data.atribuicoes || data.responsaveis || [];
   return atribs.some(a => a.email && a.email.toLowerCase() === email.toLowerCase());
 }
@@ -683,12 +687,12 @@ window._googleSignIn = async function(){
   try {
     const result = await signInWithPopup(auth, provider);
     const email = result.user.email;
-    // Load data to check atribuicoes
-    let data = {};
-    try {
-      const snap = await getDoc(doc(db,"app","dados"));
-      data = snap.exists() ? snap.data() : {};
-    } catch(e){}
+    const [cfg, snapData] = await Promise.all([
+      loadConfig(),
+      getDoc(doc(db,"app","dados")).catch(()=>null)
+    ]);
+    window._adminEmail = (cfg.adminEmail||"").toLowerCase();
+    const data = snapData && snapData.exists() ? snapData.data() : {};
     if(!isAuthorizedByAtribuicoes(email, data)){
       await signOut(auth);
       errEl.textContent="Acesso não autorizado. Solicite ao administrador que cadastre seu e-mail como atribuição.";
@@ -705,15 +709,17 @@ window._fbSave = function(data){
 
 onAuthStateChanged(auth, async (user) => {
   if(user){
-    // Load data first to validate access
+    const [cfg, snapData] = await Promise.all([
+      loadConfig(),
+      getDoc(doc(db,"app","dados")).catch(()=>null)
+    ]);
+    window._adminEmail = (cfg.adminEmail||"").toLowerCase();
     let data = {};
     try {
-      const snap = await getDoc(doc(db,"app","dados"));
-      data = snap.exists() ? snap.data() : {empresas:[],projetos:[],atribuicoes:[],tasks:[],logEntries:[],reunioes:[]};
+      data = snapData && snapData.exists() ? snapData.data() : {empresas:[],projetos:[],atribuicoes:[],tasks:[],logEntries:[],reunioes:[]};
     } catch(e){ data = {empresas:[],projetos:[],atribuicoes:[],tasks:[],logEntries:[],reunioes:[]}; }
 
     if(!isAuthorizedByAtribuicoes(user.email, data)){
-      // Not authorized - sign out silently
       await signOut(auth);
       const errEl = document.getElementById("login-error");
       errEl.textContent="Acesso não autorizado para "+user.email;
@@ -1645,11 +1651,11 @@ function deleteReuniao(){
 // ============================================================
 // ACCESS CONTROL
 // ============================================================
-var ADMIN_EMAIL_JS='danielferlete@gmail.com';
+function getAdminEmail(){ return window._adminEmail||""; }
 
 function isAdmin(){
   var u=nowUser();
-  return u&&u.email&&u.email.toLowerCase()===ADMIN_EMAIL_JS.toLowerCase();
+  return u&&u.email&&u.email.toLowerCase()===getAdminEmail().toLowerCase();
 }
 
 function getMyAtrib(){
@@ -1984,7 +1990,7 @@ function renderNotaShare(){
   var el=document.getElementById('nota-share-list');if(!el)return;
   var u=nowUser();
   var nota=editNotaId?notas.find(function(x){return x.id===editNotaId;}):null;
-  var ownerEmail=(nota&&nota.ownerEmail?nota.ownerEmail:u.email)||ADMIN_EMAIL_JS;
+  var ownerEmail=(nota&&nota.ownerEmail?nota.ownerEmail:u.email)||getAdminEmail();
   var isOwner=ownerEmail.toLowerCase()===u.email.toLowerCase();
   if(isOwner){
     // Dono: pode atribuir/desatribuir qualquer pessoa
@@ -2037,7 +2043,7 @@ function openEditNota(id){
   document.getElementById('nota-editor').innerHTML=n.content||'';
   populateNotaProj();
   document.getElementById('f-nota-proj').value=n.projId||'';
-  var isOwner=(n.ownerEmail||ADMIN_EMAIL_JS).toLowerCase()===nowUser().email.toLowerCase();
+  var isOwner=(n.ownerEmail||getAdminEmail()).toLowerCase()===nowUser().email.toLowerCase();
   document.getElementById('nota-del-btn').style.display=isOwner?'block':'none';
   renderNotaShare();
   document.getElementById('modal-nota').style.display='flex';
@@ -2068,7 +2074,7 @@ function deleteNota(){
   if(!editNotaId)return;
   var n=notas.find(function(x){return x.id===editNotaId;});
   var u=nowUser();
-  var isOwner=(n.ownerEmail||ADMIN_EMAIL_JS).toLowerCase()===nowUser().email.toLowerCase();
+  var isOwner=(n.ownerEmail||getAdminEmail()).toLowerCase()===nowUser().email.toLowerCase();
   if(!isOwner){alert('Apenas o dono da nota pode excluí-la.');return;}
   notas=notas.filter(function(n){return n.id!==editNotaId;});
   saveAll();closeModal('nota');renderNotasPage();
@@ -2079,7 +2085,7 @@ function getVisibleNotas(){
   if(!u||u.email==='?')return[];
   return notas.filter(function(n){
     // notes without ownerEmail belong to admin
-    var owner=(n.ownerEmail||ADMIN_EMAIL_JS).toLowerCase();
+    var owner=(n.ownerEmail||getAdminEmail()).toLowerCase();
     if(owner===u.email.toLowerCase())return true;
     // shared with me via atribuição
     var myAtrib=getMyAtrib();
