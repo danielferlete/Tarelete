@@ -263,19 +263,6 @@ html.dark .tooltip-wrap .tooltip-text{background:#f0f0f0;color:#1a1a1a;}
 .nota-card-preview{font-size:12px;color:var(--text-secondary);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .nota-card-meta{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}
 .nota-shared-pill{font-size:11px;padding:1px 7px;border-radius:10px;background:var(--bg-tertiary);color:var(--text-secondary)}
-/* notifications */
-#nav-tab-notif{position:relative}
-#notif-badge{display:none;position:absolute;top:6px;right:4px;background:#ef4444;color:#fff;border-radius:50%;font-size:10px;font-weight:700;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;pointer-events:none}
-.notif-item{padding:14px 16px;border-bottom:0.5px solid var(--border);cursor:pointer;transition:background .15s;display:flex;align-items:flex-start;gap:10px}
-.notif-item:hover{background:var(--bg-secondary)}
-.notif-item:last-child{border-bottom:none}
-.notif-unread{background:rgba(59,130,246,.06)}
-html.dark .notif-unread{background:rgba(59,130,246,.1)}
-.notif-dot{width:8px;height:8px;border-radius:50%;background:#3b82f6;flex-shrink:0;margin-top:5px}
-.notif-body{flex:1;min-width:0}
-.notif-text{font-size:13px;color:var(--text-primary);line-height:1.5;margin-bottom:3px}
-.notif-time{font-size:11px;color:var(--text-secondary)}
-.notif-empty{text-align:center;color:var(--text-secondary);padding:3rem 1rem;font-size:14px}
 /* search */
 #search-bar{display:none;align-items:center;gap:8px;padding:0 1.5rem;background:var(--nav-bg);border-bottom:0.5px solid var(--border);position:sticky;top:49px;z-index:49;}
 #search-input{flex:1;padding:8px 12px;border-radius:8px;border:0.5px solid var(--border);background:var(--input-bg);color:var(--text-primary);font-size:13px;font-family:inherit;max-width:500px;}
@@ -313,7 +300,6 @@ html.dark .notif-unread{background:rgba(59,130,246,.1)}
   <div class="nav-tab active" onclick="showPage('tarefas',this)">Tarefas</div>
   <div class="nav-tab" onclick="showPage('calendario',this)">Calendário</div>
   <div class="nav-tab" onclick="showPage('notas',this)">Notas</div>
-  <div class="nav-tab" id="nav-tab-notif" onclick="showPage('notificacoes',this)">Notificações<span id="notif-badge"></span></div>
   <div class="nav-tab" onclick="showPage('log',this)">Log</div>
   <div class="nav-tab" id="nav-tab-arquivo" onclick="showPage('arquivo',this)">Arquivo</div>
   <div class="nav-spacer"></div>
@@ -322,7 +308,6 @@ html.dark .notif-unread{background:rgba(59,130,246,.1)}
   <div class="nav-user">
     <img id="nav-avatar" class="nav-avatar" src="" style="display:none"/>
     <span id="nav-name" style="font-size:12px;color:#666"></span>
-    <span id="save-status" style="display:none;font-size:11px;padding:2px 7px;border-radius:10px;white-space:nowrap"></span>
     <button class="nav-signout" onclick="window._signOut()">Sair</button>
   </div>
 </div>
@@ -428,17 +413,6 @@ html.dark .notif-unread{background:rgba(59,130,246,.1)}
     <button class="sort-btn" id="arquivo-sort-archived" onclick="setArquivoSort('archived')">Arquivado em</button>
   </div>
   <div id="arquivo-list"></div>
-</div>
-
-<!-- NOTIFICAÇÕES -->
-<div class="page" id="page-notificacoes">
-  <div class="header">
-    <span class="title">Notificações</span>
-    <div class="hbtns">
-      <button class="btn" onclick="clearAllMyNotifications()">Limpar todas</button>
-    </div>
-  </div>
-  <div id="notif-list" style="background:var(--bg-secondary);border:0.5px solid var(--border);border-radius:12px;overflow:hidden"></div>
 </div>
 
 <!-- DRAWER -->
@@ -756,41 +730,7 @@ window._googleSignIn = async function(){
   } catch(e){ errEl.textContent="Erro: "+e.message; errEl.style.display="block"; }
 };
 
-var _pendingSave = null;
-var _saveStatusTimer = null;
-function _showSaveStatus(s, msg){
-  var el = document.getElementById('save-status'); if(!el) return;
-  clearTimeout(_saveStatusTimer);
-  if(s==='saving'){
-    el.textContent='Salvando…'; el.style.background='rgba(245,158,11,.15)'; el.style.color='#d97706'; el.style.display='inline';
-  } else if(s==='ok'){
-    el.textContent='✓ Salvo'; el.style.background='rgba(34,197,94,.15)'; el.style.color='#16a34a'; el.style.display='inline';
-    _saveStatusTimer=setTimeout(function(){el.style.display='none';},2500);
-  } else if(s==='error'){
-    var shortMsg=(msg||'').slice(0,80);
-    el.textContent='⚠ '+(shortMsg||'Erro ao salvar'); el.style.background='rgba(239,68,68,.15)'; el.style.color='#dc2626'; el.style.display='inline';
-    el.title=msg||'';
-  }
-}
-
-window._signOut = async function(){
-  if(_pendingSave){ _showSaveStatus('saving'); await _pendingSave; }
-  await signOut(auth);
-};
-
-// Remove undefined values recursively (Firestore rejects them)
-function _stripUndefined(val){
-  if(val===null||val===undefined)return null;
-  if(Array.isArray(val))return val.map(_stripUndefined);
-  if(typeof val==='object'){
-    var o={};
-    Object.keys(val).forEach(function(k){
-      if(val[k]!==undefined) o[k]=_stripUndefined(val[k]);
-    });
-    return o;
-  }
-  return val;
-}
+window._signOut = async function(){ await signOut(auth); };
 
 // Atomic save: read latest from Firestore, merge our changes, write back
 // Merge two arrays by id, keeping the item with the highest updatedAt,
@@ -811,55 +751,44 @@ function _mergeById(remote, local, deleted){
   return Object.values(map);
 }
 
-window._fbSave = function(data){
-  _showSaveStatus('saving');
-  _pendingSave = (async function(){
-    const ref = doc(db,"app","dados");
-    try {
-      await runTransaction(db, async (tx) => {
-        const snap = await tx.get(ref);
-        const remote = snap.exists() ? snap.data() : {};
-        // For arrays of domain objects, merge by id + updatedAt so concurrent
-        // edits to different items are both preserved.
-        const merged = Object.assign({}, remote, data);
-        // Merge deletedIds maps (union of remote + local)
-        const mergedDeleted = Object.assign({}, remote.deletedIds||{}, data.deletedIds||{});
-        merged.deletedIds = mergedDeleted;
-        ['tasks','reunioes','notas','notifications','empresas','projetos','atribuicoes'].forEach(function(key){
-          if(remote[key] || data[key]){
-            merged[key] = _mergeById(remote[key], data[key], mergedDeleted);
-          }
-        });
-        // logEntries: append only new entries not already in remote
-        if(remote.logEntries || data.logEntries){
-          var remoteIds = new Set((remote.logEntries||[]).map(function(l){return l.id;}));
-          var newEntries = (data.logEntries||[]).filter(function(l){return !remoteIds.has(l.id);});
-          merged.logEntries = newEntries.concat(remote.logEntries||[]).slice(0,500);
+window._fbSave = async function(data){
+  const ref = doc(db,"app","dados");
+  try {
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      const remote = snap.exists() ? snap.data() : {};
+      // For arrays of domain objects, merge by id + updatedAt so concurrent
+      // edits to different items are both preserved.
+      const merged = Object.assign({}, remote, data);
+      // Merge deletedIds maps (union of remote + local)
+      const mergedDeleted = Object.assign({}, remote.deletedIds||{}, data.deletedIds||{});
+      merged.deletedIds = mergedDeleted;
+      ['tasks','reunioes','notas','empresas','projetos','atribuicoes'].forEach(function(key){
+        if(remote[key] || data[key]){
+          merged[key] = _mergeById(remote[key], data[key], mergedDeleted);
         }
-        tx.set(ref, _stripUndefined(merged));
       });
-      _showSaveStatus('ok');
-    } catch(e){
-      console.error("Save error:",e);
-      _showSaveStatus('error', e.message);
-    } finally {
-      _pendingSave = null;
-    }
-  })();
-  return _pendingSave;
+      // logEntries: append only new entries not already in remote
+      if(remote.logEntries || data.logEntries){
+        var remoteIds = new Set((remote.logEntries||[]).map(function(l){return l.id;}));
+        var newEntries = (data.logEntries||[]).filter(function(l){return !remoteIds.has(l.id);});
+        merged.logEntries = newEntries.concat(remote.logEntries||[]).slice(0,500);
+      }
+      tx.set(ref, merged);
+    });
+  } catch(e){ console.error("Save error:",e); }
 };
 
 let _unsubscribe = null;
 
 function _applyRemoteData(data){
-  // Don't overwrite local state if user has a modal open or a save is in progress
+  // Don't overwrite local state if user has a modal open (editing in progress)
   const modals = ['modal-tarefa','modal-reuniao','modal-nota'];
   const editing = modals.some(function(id){
     var el = document.getElementById(id);
     return el && el.style.display !== 'none';
   });
   if(editing) return;
-  if(_pendingSave) return; // save in flight — keep local state, snapshot will arrive after commit
   window._initialData = data;
   window.dispatchEvent(new Event("app-init"));
 }
@@ -945,7 +874,7 @@ var calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
 var clPopupTaskId=null;
 var dayModalDateStr=null;
 
-function saveAll(){window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,notifications:notifications,deletedIds:deletedIds});}
+function saveAll(){window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,deletedIds:deletedIds});}
 
 function addLog(type,detail,taskId,reunId){
   var u=nowUser();
@@ -1376,7 +1305,6 @@ function showPage(p,el){
   if(p==="log")renderLog();
   if(p==="notas")renderNotasPage();
   if(p==="arquivo")renderArquivoPage();
-  if(p==="notificacoes"){markNotifsRead();renderNotificationsPage();}
 }
 function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal();}
 function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal();}
@@ -1723,18 +1651,7 @@ function saveTask(){
     tasks=tasks.map(function(t){return t.id===editTaskId?task:t;});
     addLog("edited","Editada: "+name+(changes.length?" ("+changes.join(", ")+")":""),task.id);
   }
-  // Notificar atribuições recém-adicionadas
-  var oldAtribIds=existing?(existing.atribIds||(existing.respId?[existing.respId]:[])):[];
-  var newAtribIds=selectedAtribIds.filter(function(id){return !oldAtribIds.includes(id);});
-  var proj=projetos.find(function(p){return p.id===task.projId;});
-  var projName=proj?proj.name:'';
-  newAtribIds.forEach(function(aid){
-    var atrib=atribuicoes.find(function(a){return a.id===aid;});
-    if(atrib&&atrib.email&&atrib.email.toLowerCase()!==u.email.toLowerCase()){
-      createNotification(atrib.email,u.name||u.email,task.id,task.name,projName);
-    }
-  });
-  editTaskId=task.id;saveAll();render();renderCal();closeModal("tarefa");updateNotifBadge();
+  editTaskId=task.id;saveAll();render();renderCal();closeModal("tarefa");
 }
 function archiveTask(){
   if(!editTaskId)return;
@@ -2080,10 +1997,9 @@ window.addEventListener("app-init",function(){
   tasks=(d.tasks||[]).filter(function(t){return !deletedIds[t.id];});
   logEntries=d.logEntries||[];reunioes=d.reunioes||[];
   notas=(d.notas||[]).filter(function(n){return !deletedIds[n.id];});
-  notifications=(d.notifications||[]).filter(function(n){return !deletedIds[n.id];});
   autoSelectProjects();
   applyUIAccess();
-  render();renderCal();renderNotasPage();updateNotifBadge();
+  render();renderCal();renderNotasPage();
 });
 
 // ============================================================
@@ -2324,115 +2240,18 @@ function applyViewFilter(list){
 // NOTAS
 // ============================================================
 var notas=[];
-var notifications=[];
 var editNotaId=null;
 var selectedSharedIds=[];
 var notaFilterEmp='';var notaFilterProj='';var notaFilterAtrib='';var notaSort='updated';
 
 function saveAllWithNotas(){
-  window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,notas:notas,notifications:notifications,deletedIds:deletedIds});
+  window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,notas:notas});
 }
 
-// Override saveAll to include notas, notifications e deletedIds
+// Override saveAll to include notas and deletedIds
 saveAll=function(){
-  window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,notas:notas,notifications:notifications,deletedIds:deletedIds});
+  window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,notas:notas,deletedIds:deletedIds});
 };
-
-// ============================================================
-// NOTIFICAÇÕES
-// ============================================================
-function getReadSet(){
-  var u=nowUser();if(!u||u.email==='?')return new Set();
-  try{return new Set(JSON.parse(localStorage.getItem('notif_read_'+u.email)||'[]'));}catch(e){return new Set();}
-}
-function saveReadSet(set){
-  var u=nowUser();if(!u||u.email==='?')return;
-  localStorage.setItem('notif_read_'+u.email,JSON.stringify([...set]));
-}
-function getMyNotifications(){
-  var u=nowUser();if(!u||u.email==='?')return[];
-  return (notifications||[]).filter(function(n){return n.toEmail===u.email;})
-    .sort(function(a,b){return b.createdAt-a.createdAt;});
-}
-function getUnreadNotifCount(){
-  var mine=getMyNotifications();var read=getReadSet();
-  return mine.filter(function(n){return !read.has(n.id);}).length;
-}
-function updateNotifBadge(){
-  var badge=document.getElementById('notif-badge');if(!badge)return;
-  var count=getUnreadNotifCount();
-  if(count>0){badge.textContent=count>99?'99+':String(count);badge.style.display='inline-flex';badge.style.alignItems='center';badge.style.justifyContent='center';}
-  else{badge.style.display='none';}
-}
-function markNotifsRead(){
-  var mine=getMyNotifications();var read=getReadSet();
-  mine.forEach(function(n){read.add(n.id);});
-  saveReadSet(read);updateNotifBadge();renderNotificationsPage();
-}
-function createNotification(toEmail,fromName,taskId,taskName,projectName){
-  var n={
-    id:'notif'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
-    toEmail:toEmail,fromName:fromName,
-    type:'task_assigned',
-    taskId:taskId,taskName:taskName,projectName:projectName,
-    createdAt:Date.now(),updatedAt:Date.now()
-  };
-  notifications=(notifications||[]).concat([n]);
-}
-function openNotifTask(taskId){
-  // Marca a notificação desta tarefa como lida
-  var read=getReadSet();
-  getMyNotifications().filter(function(n){return n.taskId===taskId;}).forEach(function(n){read.add(n.id);});
-  saveReadSet(read);updateNotifBadge();
-  // Navega para a aba de Tarefas
-  var tarefasTab=document.querySelector('.nav-tab[onclick*="tarefas"]');
-  if(tarefasTab)showPage('tarefas',tarefasTab);
-  // Abre o drawer da tarefa
-  var t=tasks.find(function(x){return x.id===taskId;});
-  if(!t){alert('Tarefa não encontrada (pode ter sido removida).');return;}
-  openDrawer(taskId);
-}
-function deleteNotification(notifId){
-  deletedIds[notifId]=Date.now();
-  notifications=notifications.filter(function(n){return n.id!==notifId;});
-  saveAll();updateNotifBadge();renderNotificationsPage();
-}
-function clearAllMyNotifications(){
-  var mine=getMyNotifications();
-  mine.forEach(function(n){deletedIds[n.id]=Date.now();});
-  var mineIds=new Set(mine.map(function(n){return n.id;}));
-  notifications=notifications.filter(function(n){return !mineIds.has(n.id);});
-  saveAll();updateNotifBadge();renderNotificationsPage();
-}
-function renderNotificationsPage(){
-  var list=document.getElementById('notif-list');if(!list)return;
-  var mine=getMyNotifications();
-  var read=getReadSet();
-  if(!mine.length){
-    list.innerHTML='<div class="notif-empty">Nenhuma notificação ainda</div>';
-    return;
-  }
-  list.innerHTML=mine.map(function(n){
-    var isRead=read.has(n.id);
-    var d=new Date(n.createdAt);
-    var dateStr=d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-    var projPart=n.projectName?' no projeto <strong>'+esc(n.projectName)+'</strong>':'';
-    return '<div class="notif-item'+(isRead?'':' notif-unread')+'" onclick="openNotifTask(\''+n.taskId+'\')" style="position:relative;padding-right:36px">'
-      +(isRead?'<div style="width:8px;flex-shrink:0"></div>':'<div class="notif-dot"></div>')
-      +'<div class="notif-body">'
-      +'<div class="notif-text" style="font-weight:'+(isRead?'400':'600')+'">'
-      +'<strong>'+esc(n.fromName)+'</strong> atribuiu uma nova tarefa para você'+projPart
-      +': <strong>'+esc(n.taskName)+'</strong>'
-      +'</div>'
-      +'<div class="notif-time">'+esc(dateStr)+'</div>'
-      +'</div>'
-      +'<button onclick="event.stopPropagation();deleteNotification(\''+n.id+'\')" title="Remover" '
-      +'style="position:absolute;top:50%;right:12px;transform:translateY(-50%);background:none;border:none;cursor:pointer;'
-      +'color:var(--text-secondary);font-size:15px;line-height:1;padding:4px 5px;border-radius:4px;opacity:.5" '
-      +'onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button>'
-      +'</div>';
-  }).join('');
-}
 
 function notaCmd(cmd,val){
   document.getElementById('nota-editor').focus();
