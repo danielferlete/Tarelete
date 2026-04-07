@@ -263,6 +263,19 @@ html.dark .tooltip-wrap .tooltip-text{background:#f0f0f0;color:#1a1a1a;}
 .nota-card-preview{font-size:12px;color:var(--text-secondary);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .nota-card-meta{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}
 .nota-shared-pill{font-size:11px;padding:1px 7px;border-radius:10px;background:var(--bg-tertiary);color:var(--text-secondary)}
+/* notifications */
+#nav-tab-notif{position:relative}
+#notif-badge{display:none;position:absolute;top:6px;right:4px;background:#ef4444;color:#fff;border-radius:50%;font-size:10px;font-weight:700;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;pointer-events:none}
+.notif-item{padding:14px 16px;border-bottom:0.5px solid var(--border);cursor:pointer;transition:background .15s;display:flex;align-items:flex-start;gap:10px}
+.notif-item:hover{background:var(--bg-secondary)}
+.notif-item:last-child{border-bottom:none}
+.notif-unread{background:rgba(59,130,246,.06)}
+html.dark .notif-unread{background:rgba(59,130,246,.1)}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:#3b82f6;flex-shrink:0;margin-top:5px}
+.notif-body{flex:1;min-width:0}
+.notif-text{font-size:13px;color:var(--text-primary);line-height:1.5;margin-bottom:3px}
+.notif-time{font-size:11px;color:var(--text-secondary)}
+.notif-empty{text-align:center;color:var(--text-secondary);padding:3rem 1rem;font-size:14px}
 /* search */
 #search-bar{display:none;align-items:center;gap:8px;padding:0 1.5rem;background:var(--nav-bg);border-bottom:0.5px solid var(--border);position:sticky;top:49px;z-index:49;}
 #search-input{flex:1;padding:8px 12px;border-radius:8px;border:0.5px solid var(--border);background:var(--input-bg);color:var(--text-primary);font-size:13px;font-family:inherit;max-width:500px;}
@@ -300,6 +313,7 @@ html.dark .tooltip-wrap .tooltip-text{background:#f0f0f0;color:#1a1a1a;}
   <div class="nav-tab active" onclick="showPage('tarefas',this)">Tarefas</div>
   <div class="nav-tab" onclick="showPage('calendario',this)">Calendário</div>
   <div class="nav-tab" onclick="showPage('notas',this)">Notas</div>
+  <div class="nav-tab" id="nav-tab-notif" onclick="showPage('notificacoes',this)">Notificações<span id="notif-badge"></span></div>
   <div class="nav-tab" onclick="showPage('log',this)">Log</div>
   <div class="nav-tab" id="nav-tab-arquivo" onclick="showPage('arquivo',this)">Arquivo</div>
   <div class="nav-spacer"></div>
@@ -413,6 +427,17 @@ html.dark .tooltip-wrap .tooltip-text{background:#f0f0f0;color:#1a1a1a;}
     <button class="sort-btn" id="arquivo-sort-archived" onclick="setArquivoSort('archived')">Arquivado em</button>
   </div>
   <div id="arquivo-list"></div>
+</div>
+
+<!-- NOTIFICAÇÕES -->
+<div class="page" id="page-notificacoes">
+  <div class="header">
+    <span class="title">Notificações</span>
+    <div class="hbtns">
+      <button class="btn" onclick="markNotifsRead()">Marcar todas como lidas</button>
+    </div>
+  </div>
+  <div id="notif-list" style="background:var(--bg-secondary);border:0.5px solid var(--border);border-radius:12px;overflow:hidden"></div>
 </div>
 
 <!-- DRAWER -->
@@ -763,7 +788,7 @@ window._fbSave = async function(data){
       // Merge deletedIds maps (union of remote + local)
       const mergedDeleted = Object.assign({}, remote.deletedIds||{}, data.deletedIds||{});
       merged.deletedIds = mergedDeleted;
-      ['tasks','reunioes','notas','empresas','projetos','atribuicoes'].forEach(function(key){
+      ['tasks','reunioes','notas','notifications','empresas','projetos','atribuicoes'].forEach(function(key){
         if(remote[key] || data[key]){
           merged[key] = _mergeById(remote[key], data[key], mergedDeleted);
         }
@@ -874,7 +899,7 @@ var calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
 var clPopupTaskId=null;
 var dayModalDateStr=null;
 
-function saveAll(){window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,deletedIds:deletedIds});}
+function saveAll(){window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,notifications:notifications,deletedIds:deletedIds});}
 
 function addLog(type,detail,taskId,reunId){
   var u=nowUser();
@@ -1305,6 +1330,7 @@ function showPage(p,el){
   if(p==="log")renderLog();
   if(p==="notas")renderNotasPage();
   if(p==="arquivo")renderArquivoPage();
+  if(p==="notificacoes"){markNotifsRead();renderNotificationsPage();}
 }
 function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal();}
 function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal();}
@@ -1651,7 +1677,18 @@ function saveTask(){
     tasks=tasks.map(function(t){return t.id===editTaskId?task:t;});
     addLog("edited","Editada: "+name+(changes.length?" ("+changes.join(", ")+")":""),task.id);
   }
-  editTaskId=task.id;saveAll();render();renderCal();closeModal("tarefa");
+  // Notificar atribuições recém-adicionadas
+  var oldAtribIds=existing?(existing.atribIds||(existing.respId?[existing.respId]:[])):[];
+  var newAtribIds=selectedAtribIds.filter(function(id){return !oldAtribIds.includes(id);});
+  var proj=projetos.find(function(p){return p.id===task.projId;});
+  var projName=proj?proj.name:'';
+  newAtribIds.forEach(function(aid){
+    var atrib=atribuicoes.find(function(a){return a.id===aid;});
+    if(atrib&&atrib.email&&atrib.email.toLowerCase()!==u.email.toLowerCase()){
+      createNotification(atrib.email,u.name||u.email,task.id,task.name,projName);
+    }
+  });
+  editTaskId=task.id;saveAll();render();renderCal();closeModal("tarefa");updateNotifBadge();
 }
 function archiveTask(){
   if(!editTaskId)return;
@@ -1997,9 +2034,10 @@ window.addEventListener("app-init",function(){
   tasks=(d.tasks||[]).filter(function(t){return !deletedIds[t.id];});
   logEntries=d.logEntries||[];reunioes=d.reunioes||[];
   notas=(d.notas||[]).filter(function(n){return !deletedIds[n.id];});
+  notifications=d.notifications||[];
   autoSelectProjects();
   applyUIAccess();
-  render();renderCal();renderNotasPage();
+  render();renderCal();renderNotasPage();updateNotifBadge();
 });
 
 // ============================================================
@@ -2240,18 +2278,95 @@ function applyViewFilter(list){
 // NOTAS
 // ============================================================
 var notas=[];
+var notifications=[];
 var editNotaId=null;
 var selectedSharedIds=[];
 var notaFilterEmp='';var notaFilterProj='';var notaFilterAtrib='';var notaSort='updated';
 
 function saveAllWithNotas(){
-  window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,notas:notas});
+  window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,notas:notas,notifications:notifications,deletedIds:deletedIds});
 }
 
-// Override saveAll to include notas and deletedIds
+// Override saveAll to include notas, notifications e deletedIds
 saveAll=function(){
-  window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,notas:notas,deletedIds:deletedIds});
+  window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,notas:notas,notifications:notifications,deletedIds:deletedIds});
 };
+
+// ============================================================
+// NOTIFICAÇÕES
+// ============================================================
+function getReadSet(){
+  var u=nowUser();if(!u||u.email==='?')return new Set();
+  try{return new Set(JSON.parse(localStorage.getItem('notif_read_'+u.email)||'[]'));}catch(e){return new Set();}
+}
+function saveReadSet(set){
+  var u=nowUser();if(!u||u.email==='?')return;
+  localStorage.setItem('notif_read_'+u.email,JSON.stringify([...set]));
+}
+function getMyNotifications(){
+  var u=nowUser();if(!u||u.email==='?')return[];
+  return (notifications||[]).filter(function(n){return n.toEmail===u.email;})
+    .sort(function(a,b){return b.createdAt-a.createdAt;});
+}
+function getUnreadNotifCount(){
+  var mine=getMyNotifications();var read=getReadSet();
+  return mine.filter(function(n){return !read.has(n.id);}).length;
+}
+function updateNotifBadge(){
+  var badge=document.getElementById('notif-badge');if(!badge)return;
+  var count=getUnreadNotifCount();
+  if(count>0){badge.textContent=count>99?'99+':String(count);badge.style.display='inline-flex';badge.style.alignItems='center';badge.style.justifyContent='center';}
+  else{badge.style.display='none';}
+}
+function markNotifsRead(){
+  var mine=getMyNotifications();var read=getReadSet();
+  mine.forEach(function(n){read.add(n.id);});
+  saveReadSet(read);updateNotifBadge();renderNotificationsPage();
+}
+function createNotification(toEmail,fromName,taskId,taskName,projectName){
+  var n={
+    id:'notif'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
+    toEmail:toEmail,fromName:fromName,
+    type:'task_assigned',
+    taskId:taskId,taskName:taskName,projectName:projectName,
+    createdAt:Date.now(),updatedAt:Date.now()
+  };
+  notifications=(notifications||[]).concat([n]);
+}
+function openNotifTask(taskId){
+  // Marca a notificação desta tarefa como lida
+  var read=getReadSet();
+  getMyNotifications().filter(function(n){return n.taskId===taskId;}).forEach(function(n){read.add(n.id);});
+  saveReadSet(read);updateNotifBadge();renderNotificationsPage();
+  // Abre o drawer da tarefa
+  var t=tasks.find(function(x){return x.id===taskId;});
+  if(!t){alert('Tarefa não encontrada (pode ter sido removida).');return;}
+  openDrawer(taskId);
+}
+function renderNotificationsPage(){
+  var list=document.getElementById('notif-list');if(!list)return;
+  var mine=getMyNotifications();
+  var read=getReadSet();
+  if(!mine.length){
+    list.innerHTML='<div class="notif-empty">Nenhuma notificação ainda</div>';
+    return;
+  }
+  list.innerHTML=mine.map(function(n){
+    var isRead=read.has(n.id);
+    var d=new Date(n.createdAt);
+    var dateStr=d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    var projPart=n.projectName?' no projeto <strong>'+esc(n.projectName)+'</strong>':'';
+    return '<div class="notif-item'+(isRead?'':' notif-unread')+'" onclick="openNotifTask(\''+esc(n.taskId)+'\')">'
+      +(isRead?'<div style="width:8px;flex-shrink:0"></div>':'<div class="notif-dot"></div>')
+      +'<div class="notif-body">'
+      +'<div class="notif-text'+(isRead?'':'" style="font-weight:600')+'">'
+      +'<strong>'+esc(n.fromName)+'</strong> atribuiu uma nova tarefa para você'+projPart
+      +': <strong>'+esc(n.taskName)+'</strong>'
+      +'</div>'
+      +'<div class="notif-time">'+esc(dateStr)+'</div>'
+      +'</div></div>';
+  }).join('');
+}
 
 function notaCmd(cmd,val){
   document.getElementById('nota-editor').focus();
