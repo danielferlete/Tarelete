@@ -767,7 +767,8 @@ function _showSaveStatus(s, msg){
     el.textContent='✓ Salvo'; el.style.background='rgba(34,197,94,.15)'; el.style.color='#16a34a'; el.style.display='inline';
     _saveStatusTimer=setTimeout(function(){el.style.display='none';},2500);
   } else if(s==='error'){
-    el.textContent='⚠ Erro ao salvar — tente novamente'; el.style.background='rgba(239,68,68,.15)'; el.style.color='#dc2626'; el.style.display='inline';
+    var shortMsg=(msg||'').slice(0,80);
+    el.textContent='⚠ '+(shortMsg||'Erro ao salvar'); el.style.background='rgba(239,68,68,.15)'; el.style.color='#dc2626'; el.style.display='inline';
     el.title=msg||'';
   }
 }
