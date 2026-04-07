@@ -1995,7 +1995,8 @@ window.addEventListener("app-init",function(){
   // even if a stale snapshot arrives before our transaction commits
   deletedIds=Object.assign({},d.deletedIds||{},deletedIds);
   tasks=(d.tasks||[]).filter(function(t){return !deletedIds[t.id];});
-  logEntries=d.logEntries||[];reunioes=d.reunioes||[];notas=d.notas||[];
+  logEntries=d.logEntries||[];reunioes=d.reunioes||[];
+  notas=(d.notas||[]).filter(function(n){return !deletedIds[n.id];});
   autoSelectProjects();
   applyUIAccess();
   render();renderCal();renderNotasPage();
@@ -2247,9 +2248,9 @@ function saveAllWithNotas(){
   window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,notas:notas});
 }
 
-// Override saveAll to include notas
+// Override saveAll to include notas and deletedIds
 saveAll=function(){
-  window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,notas:notas});
+  window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,notas:notas,deletedIds:deletedIds});
 };
 
 function notaCmd(cmd,val){
@@ -2352,6 +2353,7 @@ function deleteNota(){
   var u=nowUser();
   var isOwner=(n.ownerEmail||getAdminEmail()).toLowerCase()===nowUser().email.toLowerCase();
   if(!isOwner){alert('Apenas o dono da nota pode excluí-la.');return;}
+  deletedIds[editNotaId]=Date.now();
   notas=notas.filter(function(n){return n.id!==editNotaId;});
   saveAll();closeModal('nota');renderNotasPage();
 }
