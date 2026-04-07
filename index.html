@@ -434,7 +434,7 @@ html.dark .notif-unread{background:rgba(59,130,246,.1)}
   <div class="header">
     <span class="title">Notificações</span>
     <div class="hbtns">
-      <button class="btn" onclick="markNotifsRead()">Marcar todas como lidas</button>
+      <button class="btn" onclick="clearAllMyNotifications()">Limpar todas</button>
     </div>
   </div>
   <div id="notif-list" style="background:var(--bg-secondary);border:0.5px solid var(--border);border-radius:12px;overflow:hidden"></div>
@@ -2034,7 +2034,7 @@ window.addEventListener("app-init",function(){
   tasks=(d.tasks||[]).filter(function(t){return !deletedIds[t.id];});
   logEntries=d.logEntries||[];reunioes=d.reunioes||[];
   notas=(d.notas||[]).filter(function(n){return !deletedIds[n.id];});
-  notifications=d.notifications||[];
+  notifications=(d.notifications||[]).filter(function(n){return !deletedIds[n.id];});
   autoSelectProjects();
   applyUIAccess();
   render();renderCal();renderNotasPage();updateNotifBadge();
@@ -2337,11 +2337,26 @@ function openNotifTask(taskId){
   // Marca a notificação desta tarefa como lida
   var read=getReadSet();
   getMyNotifications().filter(function(n){return n.taskId===taskId;}).forEach(function(n){read.add(n.id);});
-  saveReadSet(read);updateNotifBadge();renderNotificationsPage();
+  saveReadSet(read);updateNotifBadge();
+  // Navega para a aba de Tarefas
+  var tarefasTab=document.querySelector('.nav-tab[onclick*="tarefas"]');
+  if(tarefasTab)showPage('tarefas',tarefasTab);
   // Abre o drawer da tarefa
   var t=tasks.find(function(x){return x.id===taskId;});
   if(!t){alert('Tarefa não encontrada (pode ter sido removida).');return;}
   openDrawer(taskId);
+}
+function deleteNotification(notifId){
+  deletedIds[notifId]=Date.now();
+  notifications=notifications.filter(function(n){return n.id!==notifId;});
+  saveAll();updateNotifBadge();renderNotificationsPage();
+}
+function clearAllMyNotifications(){
+  var mine=getMyNotifications();
+  mine.forEach(function(n){deletedIds[n.id]=Date.now();});
+  var mineIds=new Set(mine.map(function(n){return n.id;}));
+  notifications=notifications.filter(function(n){return !mineIds.has(n.id);});
+  saveAll();updateNotifBadge();renderNotificationsPage();
 }
 function renderNotificationsPage(){
   var list=document.getElementById('notif-list');if(!list)return;
@@ -2356,15 +2371,20 @@ function renderNotificationsPage(){
     var d=new Date(n.createdAt);
     var dateStr=d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
     var projPart=n.projectName?' no projeto <strong>'+esc(n.projectName)+'</strong>':'';
-    return '<div class="notif-item'+(isRead?'':' notif-unread')+'" onclick="openNotifTask(\''+esc(n.taskId)+'\')">'
+    return '<div class="notif-item'+(isRead?'':' notif-unread')+'" onclick="openNotifTask(\''+n.taskId+'\')" style="position:relative;padding-right:36px">'
       +(isRead?'<div style="width:8px;flex-shrink:0"></div>':'<div class="notif-dot"></div>')
       +'<div class="notif-body">'
-      +'<div class="notif-text'+(isRead?'':'" style="font-weight:600')+'">'
+      +'<div class="notif-text" style="font-weight:'+(isRead?'400':'600')+'">'
       +'<strong>'+esc(n.fromName)+'</strong> atribuiu uma nova tarefa para você'+projPart
       +': <strong>'+esc(n.taskName)+'</strong>'
       +'</div>'
       +'<div class="notif-time">'+esc(dateStr)+'</div>'
-      +'</div></div>';
+      +'</div>'
+      +'<button onclick="event.stopPropagation();deleteNotification(\''+n.id+'\')" title="Remover" '
+      +'style="position:absolute;top:50%;right:12px;transform:translateY(-50%);background:none;border:none;cursor:pointer;'
+      +'color:var(--text-secondary);font-size:15px;line-height:1;padding:4px 5px;border-radius:4px;opacity:.5" '
+      +'onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button>'
+      +'</div>';
   }).join('');
 }
 
