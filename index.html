@@ -1976,8 +1976,9 @@ window.addEventListener("app-init",function(){
   empresas=d.empresas||[];projetos=d.projetos||[];
   // migrate: if old 'responsaveis' key exists, rename to atribuicoes
   atribuicoes=d.atribuicoes||d.responsaveis||[];
-  deletedIds=d.deletedIds||{};
-  // Filter out permanently deleted items so they never reappear after onSnapshot
+  // Merge remote deletedIds with local ones — never lose a pending deletion
+  // even if a stale snapshot arrives before our transaction commits
+  deletedIds=Object.assign({},d.deletedIds||{},deletedIds);
   tasks=(d.tasks||[]).filter(function(t){return !deletedIds[t.id];});
   logEntries=d.logEntries||[];reunioes=d.reunioes||[];notas=d.notas||[];
   autoSelectProjects();
