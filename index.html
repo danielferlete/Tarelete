@@ -778,6 +778,20 @@ window._signOut = async function(){
   await signOut(auth);
 };
 
+// Remove undefined values recursively (Firestore rejects them)
+function _stripUndefined(val){
+  if(val===null||val===undefined)return null;
+  if(Array.isArray(val))return val.map(_stripUndefined);
+  if(typeof val==='object'){
+    var o={};
+    Object.keys(val).forEach(function(k){
+      if(val[k]!==undefined) o[k]=_stripUndefined(val[k]);
+    });
+    return o;
+  }
+  return val;
+}
+
 // Atomic save: read latest from Firestore, merge our changes, write back
 // Merge two arrays by id, keeping the item with the highest updatedAt,
 // and filtering out anything that has been deleted (present in deletedIds).
@@ -822,7 +836,7 @@ window._fbSave = function(data){
           var newEntries = (data.logEntries||[]).filter(function(l){return !remoteIds.has(l.id);});
           merged.logEntries = newEntries.concat(remote.logEntries||[]).slice(0,500);
         }
-        tx.set(ref, merged);
+        tx.set(ref, _stripUndefined(merged));
       });
       _showSaveStatus('ok');
     } catch(e){
