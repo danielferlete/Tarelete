@@ -1976,7 +1976,10 @@ window.addEventListener("app-init",function(){
   empresas=d.empresas||[];projetos=d.projetos||[];
   // migrate: if old 'responsaveis' key exists, rename to atribuicoes
   atribuicoes=d.atribuicoes||d.responsaveis||[];
-  tasks=d.tasks||[];logEntries=d.logEntries||[];reunioes=d.reunioes||[];notas=d.notas||[];deletedIds=d.deletedIds||{};
+  deletedIds=d.deletedIds||{};
+  // Filter out permanently deleted items so they never reappear after onSnapshot
+  tasks=(d.tasks||[]).filter(function(t){return !deletedIds[t.id];});
+  logEntries=d.logEntries||[];reunioes=d.reunioes||[];notas=d.notas||[];
   autoSelectProjects();
   applyUIAccess();
   render();renderCal();renderNotasPage();
