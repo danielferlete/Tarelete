@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Guia de Uso — Tarelete</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f5f5f3;color:#1a1a1a;line-height:1.6}
+
+/* HEADER */
+.hero{background:#fff;border-bottom:0.5px solid #e0e0e0;padding:3rem 2rem 2.5rem;text-align:center}
+.hero-logo{font-size:28px;font-weight:700;letter-spacing:-0.5px;margin-bottom:8px}
+.hero-sub{font-size:15px;color:#666;max-width:520px;margin:0 auto}
+.hero-badge{display:inline-block;margin-top:14px;font-size:12px;background:#dbeafe;color:#1e40af;padding:4px 12px;border-radius:20px;font-weight:500}
+
+/* LAYOUT */
+.container{max-width:780px;margin:0 auto;padding:2rem 1.5rem}
+
+/* ÍNDICE */
+.toc{background:#fff;border:0.5px solid #e0e0e0;border-radius:14px;padding:1.5rem;margin-bottom:2rem}
+.toc-title{font-size:13px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+.toc-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+.toc-list a{font-size:14px;color:#1e40af;text-decoration:none;display:flex;align-items:center;gap:8px}
+.toc-list a:hover{text-decoration:underline}
+.toc-num{font-size:12px;background:#ececea;color:#666;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:500}
+
+/* SECTION */
+.section{background:#fff;border:0.5px solid #e0e0e0;border-radius:14px;padding:1.75rem;margin-bottom:1.25rem;scroll-margin-top:20px}
+.section-header{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem}
+.section-num{width:32px;height:32px;border-radius:50%;background:#1a1a1a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.section-title{font-size:18px;font-weight:600;color:#1a1a1a}
+.section-desc{font-size:14px;color:#555;margin-bottom:1.25rem;line-height:1.6}
+
+/* STEPS */
+.steps{display:flex;flex-direction:column;gap:12px}
+.step{display:flex;gap:14px;align-items:flex-start}
+.step-dot{width:28px;height:28px;border-radius:50%;background:#f0f0f0;border:2px solid #e0e0e0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#666;flex-shrink:0;margin-top:1px}
+.step-body{flex:1}
+.step-title{font-size:14px;font-weight:600;color:#1a1a1a;margin-bottom:3px}
+.step-desc{font-size:13px;color:#666;line-height:1.5}
+
+/* CALLOUTS */
+.callout{border-radius:10px;padding:12px 16px;margin:1rem 0;font-size:13px;line-height:1.5;display:flex;gap:10px;align-items:flex-start}
+.callout-info{background:#dbeafe;color:#1e3a5f;border:0.5px solid #bfdbfe}
+.callout-tip{background:#d1fae5;color:#064e3b;border:0.5px solid #a7f3d0}
+.callout-warn{background:#fef3c7;color:#78350f;border:0.5px solid #fde68a}
+.callout-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+
+/* PILL DEMO */
+.demo-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 12px;border-radius:20px;border:0.5px solid #ddd;background:#fff;color:#555;font-weight:500}
+.pill-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.pill.active{background:#fff;border-color:#aaa;color:#1a1a1a}
+
+/* CARD DEMO */
+.card-demo{background:#fff;border:0.5px solid #e0e0e0;border-radius:12px;padding:12px 14px;border-left:4px solid #3b82f6;margin:12px 0}
+.card-demo-name{font-size:14px;font-weight:500;margin-bottom:5px}
+.card-demo-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:#666}
+.tag{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500}
+
+/* STAT DEMO */
+.stats-demo{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.stat-demo{background:#ececea;border-radius:8px;padding:10px 12px}
+.stat-demo-label{font-size:11px;color:#666;margin-bottom:4px}
+.stat-demo-val{font-size:20px;font-weight:600}
+
+/* DIVIDER */
+.divider{border:none;border-top:0.5px solid #eee;margin:1.25rem 0}
+
+/* FOOTER */
+.footer{text-align:center;padding:2rem 1rem;font-size:12px;color:#aaa}
+
+/* DARK TOGGLE */
+.dark-demo{display:inline-flex;align-items:center;gap:8px;font-size:13px;background:#1a1a1a;color:#f0f0f0;padding:6px 14px;border-radius:20px;font-weight:500}
+
+@media(max-width:600px){
+  .stats-demo{grid-template-columns:repeat(2,1fr)}
+  .section{padding:1.25rem}
+  .hero{padding:2rem 1rem 1.5rem}
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-logo">📋 Tarelete</div>
+  <div class="hero-sub">Guia completo de uso da plataforma para colaboradores</div>
+  <div class="hero-badge">Versão para usuários</div>
+</div>
+
+<div class="container">
+
+  <!-- ÍNDICE -->
+  <div class="toc">
+    <div class="toc-title">Índice</div>
+    <ul class="toc-list">
+      <li><a href="#s1"><span class="toc-num">1</span>Como entrar na plataforma</a></li>
+      <li><a href="#s2"><span class="toc-num">2</span>Entendendo a tela de Tarefas</a></li>
+      <li><a href="#s3"><span class="toc-num">3</span>Como usar os filtros</a></li>
+      <li><a href="#s4"><span class="toc-num">4</span>Interagindo com uma tarefa</a></li>
+      <li><a href="#s5"><span class="toc-num">5</span>Checklist e comentários</a></li>
+      <li><a href="#s6"><span class="toc-num">6</span>Calendário</a></li>
+      <li><a href="#s7"><span class="toc-num">7</span>Notas</a></li>
+      <li><a href="#s8"><span class="toc-num">8</span>Reuniões</a></li>
+      <li><a href="#s9"><span class="toc-num">9</span>Dicas e configurações</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. LOGIN -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div class="section-title">Como entrar na plataforma</div>
+    </div>
+    <div class="section-desc">O acesso é feito exclusivamente com sua conta Google. Você só consegue entrar se o administrador já tiver cadastrado o seu e-mail no sistema.</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-dot">1</div>
+        <div class="step-body">
+          <div class="step-title">Abra o link da plataforma</div>
+          <div class="step-desc">Acesse o endereço fornecido pelo administrador no seu navegador.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">2</div>
+        <div class="step-body">
+          <div class="step-title">Clique em "Entrar com Google"</div>
+          <div class="step-desc">Uma janela do Google será aberta. Escolha a conta que o administrador cadastrou.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">3</div>
+        <div class="step-body">
+          <div class="step-title">Pronto — você está dentro!</div>
+          <div class="step-desc">A plataforma carrega automaticamente apenas as tarefas, reuniões e notas atribuídas a você.</div>
+        </div>
+      </div>
+    </div>
+    <div class="callout callout-warn">
+      <span class="callout-icon">⚠️</span>
+      <span>Se aparecer "Acesso não autorizado", seu e-mail ainda não foi cadastrado. Entre em contato com o administrador.</span>
+    </div>
+  </div>
+
+  <!-- 2. TELA DE TAREFAS -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div class="section-title">Entendendo a tela de Tarefas</div>
+    </div>
+    <div class="section-desc">Ao entrar, você verá a tela principal com os seus cartões de tarefas. No topo há 4 quadros de resumo clicáveis:</div>
+
+    <div class="stats-demo">
+      <div class="stat-demo"><div class="stat-demo-label">Em aberto</div><div class="stat-demo-val">6</div></div>
+      <div class="stat-demo"><div class="stat-demo-label">Em andamento</div><div class="stat-demo-val" style="color:#7c3aed">3</div></div>
+      <div class="stat-demo"><div class="stat-demo-label">Para hoje</div><div class="stat-demo-val" style="color:#d97706">2</div></div>
+      <div class="stat-demo"><div class="stat-demo-label">Atrasadas</div><div class="stat-demo-val" style="color:#dc2626">1</div></div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-dot">→</div>
+        <div class="step-body">
+          <div class="step-title">Em aberto</div>
+          <div class="step-desc">Total de tarefas pendentes atribuídas a você.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">→</div>
+        <div class="step-body">
+          <div class="step-title">Em andamento</div>
+          <div class="step-desc">Tarefas que já foram iniciadas mas cujo prazo ainda não chegou.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">→</div>
+        <div class="step-body">
+          <div class="step-title">Para hoje</div>
+          <div class="step-desc">Tarefas com prazo no dia atual.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">→</div>
+        <div class="step-body">
+          <div class="step-title">Atrasadas</div>
+          <div class="step-desc">Tarefas com prazo já vencido. Atenção redobrada aqui!</div>
+        </div>
+      </div>
+    </div>
+    <div class="callout callout-tip">
+      <span class="callout-icon">💡</span>
+      <span>Clique em qualquer quadro para filtrar a lista de tarefas. Clique novamente para desfazer o filtro.</span>
+    </div>
+
+    <hr class="divider"/>
+
+    <div class="section-desc" style="margin-bottom:10px">Cada tarefa aparece como um cartão com as seguintes informações:</div>
+    <div class="card-demo">
+      <div class="card-demo-name">Relatório mensal de resultados</div>
+      <div class="card-demo-meta">
+        <span class="tag" style="background:#dbeafe;color:#1e40af">Acme Corp</span>
+        <span style="color:#ccc">·</span>
+        <span>Marketing</span>
+        <span style="color:#ccc">·</span>
+        <span style="display:inline-flex;align-items:center;gap:4px"><span class="pill-dot" style="background:#f97316"></span>Daniel</span>
+        <span style="color:#ccc">·</span>
+        <span style="color:#d97706">06/04 → 10/04 · 2d</span>
+        <span style="color:#ccc">·</span>
+        <span style="background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:10px;font-size:11px">☑ 1/3</span>
+        <span style="color:#ccc">·</span>
+        <span>💬 2</span>
+        <span style="margin-left:auto;background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500">● Alta</span>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-dot">🏢</div>
+        <div class="step-body"><div class="step-title">Tag colorida = Empresa</div><div class="step-desc">Empresa relacionada ao projeto da tarefa.</div></div>
+      </div>
+      <div class="step">
+        <div class="step-dot">📁</div>
+        <div class="step-body"><div class="step-title">Nome do projeto (sublinhado)</div><div class="step-desc">Clique no nome do projeto para ver sua descrição e links relacionados.</div></div>
+      </div>
+      <div class="step">
+        <div class="step-dot">👤</div>
+        <div class="step-body"><div class="step-title">Ponto colorido + nome = Atribuição</div><div class="step-desc">Quem é responsável pela tarefa. Passe o mouse para ver quem atribuiu.</div></div>
+      </div>
+      <div class="step">
+        <div class="step-dot">📅</div>
+        <div class="step-body"><div class="step-title">Data(s)</div><div class="step-desc">Prazo de entrega ou período (início → fim). Em laranja = vence em breve. Em vermelho = atrasada.</div></div>
+      </div>
+      <div class="step">
+        <div class="step-dot">☑</div>
+        <div class="step-body"><div class="step-title">Checklist</div><div class="step-desc">Progresso dos itens da tarefa (ex: 1/3 = 1 de 3 concluídos). Clique para abrir e marcar itens.</div></div>
+      </div>
+      <div class="step">
+        <div class="step-dot">💬</div>
+        <div class="step-body"><div class="step-title">Comentários</div><div class="step-desc">Número de comentários na tarefa. Clique para abrir o painel de conversa.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. FILTROS -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div class="section-title">Como usar os filtros</div>
+    </div>
+    <div class="section-desc">Abaixo dos quadros de resumo aparecem chips de filtro organizados por Empresa, Projeto e Atribuição. Use-os para focar apenas no que importa.</div>
+
+    <div class="demo-row">
+      <span class="pill"><span class="pill-dot" style="background:#3b82f6"></span>Acme Corp</span>
+      <span class="pill active"><span class="pill-dot" style="background:#22c55e"></span>Marketing</span>
+      <span class="pill"><span class="pill-dot" style="background:#f97316"></span>Daniel</span>
+      <span class="pill"><span class="pill-dot" style="background:#ec4899"></span>Camila</span>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-dot">1</div>
+        <div class="step-body"><div class="step-title">Clique num chip para ativar o filtro</div><div class="step-desc">A lista mostrará apenas as tarefas daquela empresa, projeto ou atribuição.</div></div>
+      </div>
+      <div class="step">
+        <div class="step-dot">2</div>
+        <div class="step-body"><div class="step-title">Combine filtros</div><div class="step-desc">Você pode ter filtros de empresa e projeto ativos ao mesmo tempo.</div></div>
+      </div>
+      <div class="step">
+        <div class="step-dot">3</div>
+        <div class="step-body"><div class="step-title">Clique novamente para remover</div><div class="step-desc">Clicar num chip ativo o desativa e volta a mostrar tudo.</div></div>
+      </div>
+    </div>
+
+    <hr class="divider"/>
+    <div class="section-desc" style="margin-bottom:8px"><strong>Ordenação:</strong> Use os botões de ordenação para organizar suas tarefas.</div>
+    <div class="demo-row">
+      <span class="pill active">Prioridade</span>
+      <span class="pill">Prazo ↑</span>
+      <span class="pill">Prazo ↓</span>
+    </div>
+    <div class="demo-row">
+      <span class="pill active">Todos</span>
+      <span class="pill">Semanal</span>
+    </div>
+    <div class="callout callout-tip">
+      <span class="callout-icon">💡</span>
+      <span><strong>Visão Semanal:</strong> clique em "Semanal" para ver apenas as tarefas da semana atual.</span>
+    </div>
+  </div>
+
+  <!-- 4. INTERAGINDO -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div class="section-title">Interagindo com uma tarefa</div>
+    </div>
+    <div class="section-desc">Clique em qualquer cartão de tarefa para abrir o painel de edição completo.</div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-dot">✓</div>
+        <div class="step-body">
+          <div class="step-title">Marcar como concluída</div>
+          <div class="step-desc">Clique no círculo à esquerda do nome da tarefa (no cartão ou dentro do painel). A tarefa vai para a seção "Concluídas" no final da lista.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">✏️</div>
+        <div class="step-body">
+          <div class="step-title">Editar detalhes</div>
+          <div class="step-desc">Dentro do painel você pode alterar o nome, descrição, datas, prioridade e checklist. Sempre clique em <strong>Salvar</strong> ao terminar.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">📁</div>
+        <div class="step-body">
+          <div class="step-title">Ver informações do projeto</div>
+          <div class="step-desc">No cartão, clique no nome do projeto (aparece sublinhado com pontilhado) para ver a descrição e links do projeto sem abrir o painel de edição.</div>
+        </div>
+      </div>
+    </div>
+    <div class="callout callout-info">
+      <span class="callout-icon">ℹ️</span>
+      <span>O painel de edição só fecha ao clicar em <strong>Salvar</strong> ou <strong>Cancelar</strong> — clicar fora não fecha, para evitar perda de dados.</span>
+    </div>
+  </div>
+
+  <!-- 5. CHECKLIST E COMENTÁRIOS -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <div class="section-title">Checklist e comentários</div>
+    </div>
+
+    <div class="section-desc"><strong>Checklist:</strong> cada tarefa pode ter uma lista de sub-itens que devem ser feitos.</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-dot">☑</div>
+        <div class="step-body">
+          <div class="step-title">Marcar itens do checklist</div>
+          <div class="step-desc">Clique no ícone "☑ X/Y" no cartão para abrir um popup com os itens. Clique na caixa ao lado de cada item para marcar como feito.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">🟢</div>
+        <div class="step-body">
+          <div class="step-title">Checklist completo</div>
+          <div class="step-desc">Quando todos os itens estiverem marcados, o badge fica verde indicando que o checklist está 100% completo.</div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider"/>
+
+    <div class="section-desc"><strong>Comentários:</strong> use para comunicar atualizações ou dúvidas diretamente na tarefa.</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-dot">💬</div>
+        <div class="step-body">
+          <div class="step-title">Abrir o painel de comentários</div>
+          <div class="step-desc">Clique no ícone "💬 N" no cartão. Um painel desliza pela direita com o histórico de mensagens.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">✉️</div>
+        <div class="step-body">
+          <div class="step-title">Enviar um comentário</div>
+          <div class="step-desc">Digite sua mensagem na caixa de texto na parte inferior do painel e clique em <strong>Enviar</strong> (ou pressione Enter).</div>
+        </div>
+      </div>
+    </div>
+    <div class="callout callout-info">
+      <span class="callout-icon">ℹ️</span>
+      <span>Todos os participantes da tarefa podem ler os comentários. Use para registrar andamentos, dúvidas ou atualizações.</span>
+    </div>
+  </div>
+
+  <!-- 6. CALENDÁRIO -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <div class="section-title">Calendário</div>
+    </div>
+    <div class="section-desc">A aba Calendário mostra suas tarefas e reuniões distribuídas visualmente no mês.</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-dot">1</div>
+        <div class="step-body">
+          <div class="step-title">Navegue pelos meses</div>
+          <div class="step-desc">Use as setas (‹ ›) ao lado do nome do mês para avançar ou recuar.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">2</div>
+        <div class="step-body">
+          <div class="step-title">Clique em um dia</div>
+          <div class="step-desc">Abre um popup com os cartões completos das tarefas daquele dia — incluindo checklist, comentários e botão de concluir.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">3</div>
+        <div class="step-body">
+          <div class="step-title">Filtre no calendário</div>
+          <div class="step-desc">Os mesmos filtros de Empresa, Projeto e Atribuição estão disponíveis no topo do calendário. O popup do dia respeita os filtros ativos.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">4</div>
+        <div class="step-body">
+          <div class="step-title">Tarefas com duração</div>
+          <div class="step-desc">Tarefas que possuem data de início e prazo aparecem como barras coloridas que se estendem pelos dias do período.</div>
+        </div>
+      </div>
+    </div>
+    <div class="callout callout-tip">
+      <span class="callout-icon">💡</span>
+      <span>Reuniões aparecem no calendário com horário (ex: <strong>14:00 Apresentação</strong>). Clique para ver os detalhes e adicionar ao Google Agenda.</span>
+    </div>
+  </div>
+
+  <!-- 7. NOTAS -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <div class="section-title">Notas</div>
+    </div>
+    <div class="section-desc">As Notas são documentos pessoais. Você só vê suas próprias notas e aquelas que alguém compartilhou diretamente com você.</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-dot">➕</div>
+        <div class="step-body">
+          <div class="step-title">Criar uma nota</div>
+          <div class="step-desc">Clique em <strong>+ Nova nota</strong>. Preencha o título, o conteúdo (com formatação: negrito, listas, títulos) e vincule a um projeto se quiser.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">🔗</div>
+        <div class="step-body">
+          <div class="step-title">Compartilhar com alguém</div>
+          <div class="step-desc">Na área "Compartilhar com", selecione as pessoas que devem ter acesso à sua nota. Apenas você (criador) pode adicionar ou remover pessoas.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">🚪</div>
+        <div class="step-body">
+          <div class="step-title">Sair de uma nota compartilhada</div>
+          <div class="step-desc">Se alguém compartilhou uma nota com você, abra-a e clique no seu próprio chip para sair — você perderá o acesso a ela.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">🔍</div>
+        <div class="step-body">
+          <div class="step-title">Filtrar e ordenar notas</div>
+          <div class="step-desc">Use os filtros de Empresa, Projeto e Atribuição no topo da lista. Ordene por Última alteração, Data de criação ou Título.</div>
+        </div>
+      </div>
+    </div>
+    <div class="callout callout-warn">
+      <span class="callout-icon">⚠️</span>
+      <span>Notas são pessoais — nem o administrador vê suas notas, a menos que você compartilhe explicitamente.</span>
+    </div>
+  </div>
+
+  <!-- 8. REUNIÕES -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <div class="section-title">Reuniões</div>
+    </div>
+    <div class="section-desc">A seção de Reuniões aparece abaixo das tarefas na tela principal. Você vê apenas as reuniões em que foi adicionado como participante.</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-dot">📅</div>
+        <div class="step-body">
+          <div class="step-title">Ver detalhes da reunião</div>
+          <div class="step-desc">Clique em um cartão de reunião para ver título, projeto, data, horário e lista de participantes.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">📆</div>
+        <div class="step-body">
+          <div class="step-title">Adicionar ao Google Agenda</div>
+          <div class="step-desc">Cada reunião tem um botão <strong>"Adicionar ao Google Agenda"</strong>. Clique para abrir o Google Agenda com os dados já preenchidos.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">🔁</div>
+        <div class="step-body">
+          <div class="step-title">Recorrência</div>
+          <div class="step-desc">Reuniões marcadas como "Daily" repetem semanalmente. Elas aparecem no calendário em todas as semanas correspondentes.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. DICAS -->
+  <div class="section" id="s9">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <div class="section-title">Dicas e configurações</div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-dot">🌙</div>
+        <div class="step-body">
+          <div class="step-title">Modo escuro</div>
+          <div class="step-desc">Clique no ícone 🌙 no canto superior direito para ativar o modo escuro. A preferência é salva — ao retornar, estará como você deixou.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">🔍</div>
+        <div class="step-body">
+          <div class="step-title">Busca rápida</div>
+          <div class="step-desc">Use a barra de busca no topo para encontrar tarefas, projetos e reuniões pelo nome. Os resultados respeitam as permissões do seu usuário.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">✅</div>
+        <div class="step-body">
+          <div class="step-title">Tarefas concluídas</div>
+          <div class="step-desc">Tarefas finalizadas ficam agrupadas na seção <strong>"Concluídas"</strong> no final da lista. Clique na barra para expandir e ver o histórico.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-dot">🚪</div>
+        <div class="step-body">
+          <div class="step-title">Sair da plataforma</div>
+          <div class="step-desc">Clique no botão <strong>Sair</strong> ao lado do seu nome no canto superior direito. Isso encerra sua sessão com segurança.</div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider"/>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">ℹ️</span>
+      <div>
+        <strong>O que apenas o administrador pode fazer:</strong><br/>
+        Criar e excluir empresas, projetos e atribuições · Arquivar ou excluir tarefas · Visualizar o Log de alterações · Ver o Arquivo de tarefas · Ver notas de outros usuários
+      </div>
+    </div>
+    <div class="callout callout-tip">
+      <span class="callout-icon">💡</span>
+      <span>A plataforma atualiza em tempo real. Se outra pessoa salvar uma tarefa enquanto você está na tela, os dados serão atualizados automaticamente.</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  Tarilete · Guia do usuário · Versão 2026
+</div>
+
+</body>
+</html>
