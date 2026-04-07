@@ -561,6 +561,8 @@ html.dark .tooltip-wrap .tooltip-text{background:#f0f0f0;color:#1a1a1a;}
         </div>
         <div class="modal-btns">
           <button class="del-btn" id="task-del-btn" onclick="archiveTask()" style="display:none">Arquivar</button>
+          <button class="del-btn" id="task-unarchive-btn" onclick="unarchiveTask()" style="display:none;color:#1e40af">Desarquivar</button>
+          <button class="del-btn" id="task-destroy-btn" onclick="destroyTask()" style="display:none">Excluir permanente</button>
           <button class="btn" onclick="closeModal('tarefa')">Cancelar</button>
           <button class="btn btn-primary" onclick="saveTask()">Salvar</button>
         </div>
@@ -1456,6 +1458,8 @@ function openModal(type){
     ["f-name","f-task-desc","f-start-date","f-date"].forEach(function(id){document.getElementById(id).value="";});
     document.getElementById("f-prio").value="media";
     document.getElementById("task-del-btn").style.display="none";
+    document.getElementById("task-unarchive-btn").style.display="none";
+    document.getElementById("task-destroy-btn").style.display="none";
     document.getElementById("comment-count-badge").textContent="";
     document.getElementById("cl-badge").textContent="";
     document.getElementById("date-error").style.display="none";
@@ -1583,7 +1587,11 @@ function openEditTask(id){
   document.getElementById("f-date").value=t.date||"";
   document.getElementById("f-prio").value=t.prio;
   document.getElementById("date-error").style.display="none";
-  document.getElementById("task-del-btn").style.display=isAdmin()?"block":"none";
+  var admin=isAdmin();
+  var isArchived=!!t.archived;
+  document.getElementById("task-del-btn").style.display=(admin&&!isArchived)?"block":"none";
+  document.getElementById("task-unarchive-btn").style.display=(admin&&isArchived)?"block":"none";
+  document.getElementById("task-destroy-btn").style.display=(admin&&isArchived)?"block":"none";
   document.getElementById("comment-count-badge").textContent=(t.comments||[]).length?"("+(t.comments||[]).length+")":"";
   document.getElementById("cl-badge").textContent=clItems.length?"("+clItems.length+")":"";
   populateProjSel(t.projId||(t.projIds&&t.projIds[0]));
@@ -1639,6 +1647,29 @@ function archiveTask(){
     addLog("deleted","Tarefa arquivada: "+t.name,t.id);
     return Object.assign({},t,{archived:true,archivedAt:ts,updatedAt:ts});
   });
+  saveAll();closeModal("tarefa");render();renderCal();renderArquivoPage();
+}
+
+function unarchiveTask(){
+  if(!editTaskId)return;
+  if(!isAdmin()){alert("Apenas o administrador pode desarquivar tarefas.");return;}
+  var ts=Date.now();
+  tasks=tasks.map(function(t){
+    if(t.id!==editTaskId)return t;
+    addLog("edited","Tarefa desarquivada: "+t.name,t.id);
+    return Object.assign({},t,{archived:false,archivedAt:null,updatedAt:ts});
+  });
+  saveAll();closeModal("tarefa");render();renderCal();renderArquivoPage();
+}
+
+function destroyTask(){
+  if(!editTaskId)return;
+  if(!isAdmin()){alert("Apenas o administrador pode excluir tarefas.");return;}
+  var t=tasks.find(function(x){return x.id===editTaskId;});
+  if(!confirm('Tem certeza que deseja excluir permanentemente a tarefa "'+( t?t.name:"")+'"? Esta ação não pode ser desfeita.')){return;}
+  addLog("deleted","Tarefa excluída permanentemente: "+(t?t.name:""),editTaskId);
+  deletedIds[editTaskId]=Date.now();
+  tasks=tasks.filter(function(x){return x.id!==editTaskId;});
   saveAll();closeModal("tarefa");render();renderCal();renderArquivoPage();
 }
 
@@ -1913,7 +1944,7 @@ function renderArquivoPage(){
     var prioColor=PRIO_COLORS[t.prio]||'#aaa';
     var cl=t.checklist||[];
     var clDone=cl.filter(function(c){return c.done;}).length;
-    var h='<div class="task-card done" style="border-left-color:'+projColor+';opacity:0.85">';
+    var h='<div class="task-card done" style="border-left-color:'+projColor+';opacity:0.85;cursor:pointer" onclick="openEditTask(\''+t.id+'\')">';
     h+='<div class="task-top">';
     h+='<span class="task-name" style="text-decoration:none">'+esc(t.name)+'</span>';
     h+='<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:10px;background:'+hexAlpha(prioColor,.12)+';color:'+prioColor+';white-space:nowrap;font-weight:500">';
