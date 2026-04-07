@@ -301,6 +301,7 @@ html.dark .tooltip-wrap .tooltip-text{background:#f0f0f0;color:#1a1a1a;}
   <div class="nav-tab" onclick="showPage('calendario',this)">Calendário</div>
   <div class="nav-tab" onclick="showPage('notas',this)">Notas</div>
   <div class="nav-tab" onclick="showPage('log',this)">Log</div>
+  <div class="nav-tab" id="nav-tab-arquivo" onclick="showPage('arquivo',this)">Arquivo</div>
   <div class="nav-spacer"></div>
   <button id="search-toggle" onclick="toggleSearch()" title="Busca global (Ctrl+K)">🔍</button>
   <button id="dark-toggle" onclick="toggleDarkMode()" title="Modo escuro">🌙</button>
@@ -392,6 +393,26 @@ html.dark .tooltip-wrap .tooltip-text{background:#f0f0f0;color:#1a1a1a;}
 <div class="page" id="page-log">
   <div class="header"><span class="title">Log de alterações</span></div>
   <div id="log-list"><div class="empty">Nenhuma alteração registrada ainda.</div></div>
+</div>
+
+<!-- ARQUIVO -->
+<div class="page" id="page-arquivo">
+  <div class="header">
+    <span class="title">Arquivo</span>
+    <div class="hbtns" id="arquivo-count-wrap"></div>
+  </div>
+  <div id="arquivo-filter-bar" style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem"></div>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
+    <span class="sort-label">Período:</span>
+    <input type="date" class="form-input" id="arquivo-date-from" style="width:150px" onchange="renderArquivoPage()"/>
+    <span class="sort-label">até</span>
+    <input type="date" class="form-input" id="arquivo-date-to" style="width:150px" onchange="renderArquivoPage()"/>
+    <span class="sort-label" style="margin-left:8px">Ordenar:</span>
+    <button class="sort-btn active" id="arquivo-sort-date" onclick="setArquivoSort('date')">Prazo</button>
+    <button class="sort-btn" id="arquivo-sort-name" onclick="setArquivoSort('name')">Nome A–Z</button>
+    <button class="sort-btn" id="arquivo-sort-archived" onclick="setArquivoSort('archived')">Arquivado em</button>
+  </div>
+  <div id="arquivo-list"></div>
 </div>
 
 <!-- DRAWER -->
@@ -539,7 +560,7 @@ html.dark .tooltip-wrap .tooltip-text{background:#f0f0f0;color:#1a1a1a;}
           </select>
         </div>
         <div class="modal-btns">
-          <button class="del-btn" id="task-del-btn" onclick="deleteTask()" style="display:none">Excluir</button>
+          <button class="del-btn" id="task-del-btn" onclick="archiveTask()" style="display:none">Arquivar</button>
           <button class="btn" onclick="closeModal('tarefa')">Cancelar</button>
           <button class="btn btn-primary" onclick="saveTask()">Salvar</button>
         </div>
@@ -1266,6 +1287,7 @@ function showPage(p,el){
   if(p==="calendario")renderCal();
   if(p==="log")renderLog();
   if(p==="notas")renderNotasPage();
+  if(p==="arquivo")renderArquivoPage();
 }
 function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal();}
 function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal();}
@@ -1608,14 +1630,16 @@ function saveTask(){
   }
   editTaskId=task.id;saveAll();render();renderCal();closeModal("tarefa");
 }
-function deleteTask(){
+function archiveTask(){
   if(!editTaskId)return;
-  if(!isAdmin()){alert("Apenas o administrador pode excluir tarefas.");return;}
-  var t=tasks.find(function(x){return x.id===editTaskId;});
-  addLog("deleted","Tarefa excluída: "+(t?t.name:""),editTaskId);
-  deletedIds[editTaskId]=Date.now();
-  tasks=tasks.filter(function(t){return t.id!==editTaskId;});
-  saveAll();closeModal("tarefa");render();renderCal();
+  if(!isAdmin()){alert("Apenas o administrador pode arquivar tarefas.");return;}
+  var ts=Date.now();
+  tasks=tasks.map(function(t){
+    if(t.id!==editTaskId)return t;
+    addLog("deleted","Tarefa arquivada: "+t.name,t.id);
+    return Object.assign({},t,{archived:true,archivedAt:ts,updatedAt:ts});
+  });
+  saveAll();closeModal("tarefa");render();renderCal();renderArquivoPage();
 }
 
 // ============================================================
@@ -1742,10 +1766,12 @@ function getMyAtrib(){
 }
 
 function applyAccessFilter(list){
-  if(isAdmin())return list;
+  // Always exclude archived tasks from normal views
+  var active=list.filter(function(t){return !t.archived;});
+  if(isAdmin())return active;
   var myAtrib=getMyAtrib();
   if(!myAtrib)return [];
-  return list.filter(function(t){
+  return active.filter(function(t){
     var ids=t.atribIds||(t.respId?[t.respId]:[]);
     return ids.includes(myAtrib.id);
   });
@@ -1766,9 +1792,10 @@ function applyUIAccess(){
   ['btn-empresa','btn-projeto','btn-atribuicao'].forEach(function(id){
     var el=document.getElementById(id);if(el)el.style.display=admin?'':'none';
   });
-  // Hide Log nav tab for non-admins
+  // Hide Log and Arquivo nav tabs for non-admins
   document.querySelectorAll('.nav-tab').forEach(function(tab){
-    if(tab.getAttribute('onclick')&&tab.getAttribute('onclick').indexOf("'log'")>=0){
+    var oc=tab.getAttribute('onclick')||'';
+    if(oc.indexOf("'log'")>=0||oc.indexOf("'arquivo'")>=0){
       tab.style.display=admin?'':'none';
     }
   });
@@ -1787,6 +1814,128 @@ function autoSelectProjects(){
   filterAtribs=[myAtrib.id];
   calFilterAtribs=[myAtrib.id];
 }
+// ============================================================
+// ARQUIVO
+// ============================================================
+var arquivoFilterEmp='',arquivoFilterProj='',arquivoFilterAtrib='',arquivoSort='date';
+
+function setArquivoSort(s){
+  arquivoSort=s;
+  ['date','name','archived'].forEach(function(k){
+    var b=document.getElementById('arquivo-sort-'+k);if(b)b.classList.toggle('active',k===s);
+  });
+  renderArquivoPage();
+}
+
+function renderArquivoPage(){
+  var el=document.getElementById('arquivo-list');if(!el)return;
+  var archived=tasks.filter(function(t){return t.archived;});
+
+  // Date range filter
+  var from=document.getElementById('arquivo-date-from');
+  var to=document.getElementById('arquivo-date-to');
+  var fromVal=from?from.value:'';
+  var toVal=to?to.value:'';
+  if(fromVal||toVal){
+    archived=archived.filter(function(t){
+      var start=t.startDate||t.date||'';
+      var end=t.date||'';
+      if(!end)return false;
+      if(fromVal&&end<fromVal)return false;
+      if(toVal&&start>toVal)return false;
+      return true;
+    });
+  }
+
+  // Build filter chips from all archived (pre date filter for chips)
+  var all=tasks.filter(function(t){return t.archived;});
+  var allEmpIds=[...new Set(all.map(function(t){var p=getProjById(t.projId||(t.projIds&&t.projIds[0]));return p?p.companyId:null;}).filter(Boolean))];
+  var allProjIds=[...new Set(all.map(function(t){return t.projId||(t.projIds&&t.projIds[0]);}).filter(Boolean))];
+  var allAtribIds=[...new Set(all.flatMap(function(t){return t.atribIds||(t.respId?[t.respId]:[]);}))];
+  var fb=document.getElementById('arquivo-filter-bar');
+  if(fb){
+    var fHTML='';
+    if(allEmpIds.length){
+      fHTML+='<div class="filter-row"><span class="filter-label">Empresa</span>';
+      allEmpIds.forEach(function(eid){var e=getEmpresaById(eid);if(!e)return;fHTML+='<button class="chip'+(arquivoFilterEmp===eid?' active':'')+'" onclick="setArquivoFE(\''+eid+'\')">'+esc(e.name)+'</button>';});
+      fHTML+='</div>';
+    }
+    if(allProjIds.length){
+      fHTML+='<div class="filter-row"><span class="filter-label">Projeto</span>';
+      allProjIds.forEach(function(pid){var p=getProjById(pid);if(!p)return;fHTML+='<button class="chip'+(arquivoFilterProj===pid?' active':'')+'" onclick="setArquivoFP(\''+pid+'\')">'+dot(p.color||'#aaa')+esc(p.name)+'</button>';});
+      fHTML+='</div>';
+    }
+    if(allAtribIds.length){
+      fHTML+='<div class="filter-row"><span class="filter-label">Atribuição</span>';
+      allAtribIds.forEach(function(aid){var a=getAtribById(aid);if(!a)return;fHTML+='<button class="chip'+(arquivoFilterAtrib===aid?' active':'')+'" onclick="setArquivoFA(\''+aid+'\')">'+dot(a.color||'#7F77DD')+esc(a.name)+'</button>';});
+      fHTML+='</div>';
+    }
+    fb.innerHTML=fHTML;
+  }
+
+  // Apply empresa/proj/atrib filters
+  if(arquivoFilterEmp){
+    archived=archived.filter(function(t){var p=getProjById(t.projId||(t.projIds&&t.projIds[0]));return p&&p.companyId===arquivoFilterEmp;});
+  }
+  if(arquivoFilterProj){
+    archived=archived.filter(function(t){return (t.projId||(t.projIds&&t.projIds[0]))===arquivoFilterProj;});
+  }
+  if(arquivoFilterAtrib){
+    archived=archived.filter(function(t){
+      var ids=t.atribIds||(t.respId?[t.respId]:[]);
+      return ids.includes(arquivoFilterAtrib);
+    });
+  }
+
+  // Sort
+  archived=[...archived].sort(function(a,b){
+    if(arquivoSort==='name')return(a.name||'').localeCompare(b.name||'','pt');
+    if(arquivoSort==='archived')return(b.archivedAt||0)-(a.archivedAt||0);
+    return(a.date||'z').localeCompare(b.date||'z');
+  });
+
+  // Count badge
+  var cw=document.getElementById('arquivo-count-wrap');
+  if(cw)cw.innerHTML='<span style="font-size:13px;color:var(--text-secondary)">'+archived.length+' tarefa'+(archived.length!==1?'s':'')+'</span>';
+
+  if(!archived.length){
+    el.innerHTML='<div class="empty">Nenhuma tarefa arquivada encontrada.</div>';
+    return;
+  }
+
+  function fmtD(d){if(!d)return'—';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+  el.innerHTML=archived.map(function(t){
+    var pid=t.projId||(t.projIds&&t.projIds[0]);
+    var proj=getProjById(pid);
+    var empresa=proj?getEmpresaById(proj.companyId):null;
+    var tatribs=getTaskAtribs(t);
+    var projColor=proj&&proj.color?proj.color:'#e0e0e0';
+    var prioColor=PRIO_COLORS[t.prio]||'#aaa';
+    var cl=t.checklist||[];
+    var clDone=cl.filter(function(c){return c.done;}).length;
+    var h='<div class="task-card done" style="border-left-color:'+projColor+';opacity:0.85">';
+    h+='<div class="task-top">';
+    h+='<span class="task-name" style="text-decoration:none">'+esc(t.name)+'</span>';
+    h+='<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:10px;background:'+hexAlpha(prioColor,.12)+';color:'+prioColor+';white-space:nowrap;font-weight:500">';
+    h+='<span style="width:6px;height:6px;border-radius:50%;background:'+prioColor+';display:inline-block"></span>';
+    h+=(t.prio==='alta'?'Alta':t.prio==='media'?'Média':'Baixa')+'</span></div>';
+    h+='<div class="task-meta">';
+    if(empresa)h+='<span class="company-tag" style="background:'+hexAlpha(projColor,.12)+';color:'+projColor+'">'+esc(empresa.name)+'</span>';
+    if(proj)h+='<span class="sep">·</span><span class="meta-item">'+esc(proj.name)+'</span>';
+    if(tatribs.length){h+='<span class="sep">·</span>';tatribs.forEach(function(a){h+='<span class="resp-pill"><span class="resp-dot" style="background:'+(a.color||'#7F77DD')+'"></span>'+esc(a.name)+'</span> ';});}
+    if(t.startDate&&t.date&&t.startDate!==t.date)h+='<span class="sep">·</span><span class="meta-item">'+fmtD(t.startDate)+' → '+fmtD(t.date)+'</span>';
+    else if(t.date)h+='<span class="sep">·</span><span class="meta-item">'+fmtD(t.date)+'</span>';
+    if(cl.length)h+='<span class="sep">·</span><span class="checklist-summary'+(clDone===cl.length?' done-all':'')+'">☑ '+clDone+'/'+cl.length+'</span>';
+    if(t.archivedAt)h+='<span class="sep">·</span><span class="meta-item" style="color:#aaa">📦 '+fmtD(new Date(t.archivedAt).toISOString().slice(0,10))+'</span>';
+    h+='</div></div>';
+    return h;
+  }).join('');
+}
+
+function setArquivoFE(eid){arquivoFilterEmp=(arquivoFilterEmp===eid?'':eid);arquivoFilterProj='';renderArquivoPage();}
+function setArquivoFP(pid){arquivoFilterProj=(arquivoFilterProj===pid?'':pid);renderArquivoPage();}
+function setArquivoFA(aid){arquivoFilterAtrib=(arquivoFilterAtrib===aid?'':aid);renderArquivoPage();}
+
 // ============================================================
 // END ACCESS CONTROL
 // ============================================================
