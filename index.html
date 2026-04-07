@@ -28,7 +28,7 @@ body{font-family:system-ui,sans-serif;background:#f5f5f3;color:#1a1a1a;min-heigh
 .btn{font-size:13px;padding:6px 13px;border-radius:8px;border:0.5px solid #ccc;background:transparent;color:#1a1a1a;cursor:pointer;white-space:nowrap}
 .btn:hover{background:#f0f0f0}
 .btn-primary{background:#dbeafe;color:#1e40af;border-color:#bfdbfe}.btn-primary:hover{opacity:0.85}
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:1.25rem}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:1.25rem}
 .stat{background:#ececea;border-radius:8px;padding:10px 12px;cursor:pointer;transition:outline .1s}.stat.active-stat{outline:2px solid #1a1a1a}
 .stat-label{font-size:11px;color:#666;margin-bottom:4px}.stat-val{font-size:22px;font-weight:500}
 .filter-bar{display:flex;flex-direction:column;gap:8px;margin-bottom:1rem}
@@ -931,6 +931,14 @@ function matchesFilters(t){
 function applyStatFilter(list){
   if(statFilter==="today")return list.filter(function(t){return t.date&&daysDiff(t.date)===0;});
   if(statFilter==="overdue")return list.filter(function(t){return t.date&&daysDiff(t.date)<0;});
+  if(statFilter==="andamento"){
+    var today=todayStr();
+    return list.filter(function(t){
+      var started=t.startDate&&t.startDate<=today;
+      var notTodayOrOverdue=!t.date||(daysDiff(t.date)>0);
+      return started&&notTodayOrOverdue;
+    });
+  }
   return list;
 }
 function sortedTasks(list){
@@ -1035,12 +1043,19 @@ function render(){
   var filteredOpen=open.filter(matchesFilters);
   var todayCount=filteredOpen.filter(function(t){return t.date&&daysDiff(t.date)===0;}).length;
   var overdueCount=filteredOpen.filter(function(t){return t.date&&daysDiff(t.date)<0;}).length;
+  var andamentoCount=filteredOpen.filter(function(t){
+    var today=todayStr();
+    var started=t.startDate&&t.startDate<=today;
+    var notTodayOrOverdue=!t.date||(daysDiff(t.date)>0);
+    return started&&notTodayOrOverdue;
+  }).length;
 
   function statCard(label,val,style,f){
     return '<div class="stat'+(statFilter===f?" active-stat":"")+'" onclick="toggleStatFilter(\''+f+'\')">'+'<div class="stat-label">'+label+'</div><div class="stat-val" style="'+style+'">'+val+"</div></div>";
   }
   document.getElementById("stats").innerHTML=
     statCard("Em aberto",filteredOpen.length,"","open")+
+    statCard("Em andamento",andamentoCount,"color:#7c3aed","andamento")+
     statCard("Para hoje",todayCount,"color:#d97706","today")+
     statCard("Atrasadas",overdueCount,"color:#dc2626","overdue");
 
