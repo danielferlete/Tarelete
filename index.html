@@ -2253,7 +2253,7 @@ function saveAllWithNotas(){
 
 // Override saveAll to include notas and deletedIds
 saveAll=function(){
-  window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,notas:notas,deletedIds:deletedIds});
+  return window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,notas:notas,deletedIds:deletedIds});
 };
 
 function notaCmd(cmd,val){
