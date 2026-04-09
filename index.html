@@ -874,7 +874,7 @@ var calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
 var clPopupTaskId=null;
 var dayModalDateStr=null;
 
-function saveAll(){window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,deletedIds:deletedIds});}
+function saveAll(){return window._fbSave({empresas:empresas,projetos:projetos,atribuicoes:atribuicoes,tasks:tasks,logEntries:logEntries,reunioes:reunioes,deletedIds:deletedIds});}
 
 function addLog(type,detail,taskId,reunId){
   var u=nowUser();
@@ -1651,7 +1651,10 @@ function saveTask(){
     tasks=tasks.map(function(t){return t.id===editTaskId?task:t;});
     addLog("edited","Editada: "+name+(changes.length?" ("+changes.join(", ")+")":""),task.id);
   }
-  editTaskId=task.id;saveAll();render();renderCal();closeModal("tarefa");
+  editTaskId=task.id;
+  var _savePromise=saveAll();
+  render();renderCal();
+  if(_savePromise&&_savePromise.then){_savePromise.then(function(){closeModal("tarefa");});}else{closeModal("tarefa");}
 }
 function archiveTask(){
   if(!editTaskId)return;
@@ -1662,7 +1665,7 @@ function archiveTask(){
     addLog("deleted","Tarefa arquivada: "+t.name,t.id);
     return Object.assign({},t,{archived:true,archivedAt:ts,updatedAt:ts});
   });
-  saveAll();closeModal("tarefa");render();renderCal();renderArquivoPage();
+  var _sp=saveAll();if(_sp&&_sp.then){_sp.then(function(){closeModal("tarefa");render();renderCal();renderArquivoPage();});}else{closeModal("tarefa");render();renderCal();renderArquivoPage();}
 }
 
 function unarchiveTask(){
@@ -1674,7 +1677,7 @@ function unarchiveTask(){
     addLog("edited","Tarefa desarquivada: "+t.name,t.id);
     return Object.assign({},t,{archived:false,archivedAt:null,updatedAt:ts});
   });
-  saveAll();closeModal("tarefa");render();renderCal();renderArquivoPage();
+  var _sp2=saveAll();if(_sp2&&_sp2.then){_sp2.then(function(){closeModal("tarefa");render();renderCal();renderArquivoPage();});}else{closeModal("tarefa");render();renderCal();renderArquivoPage();}
 }
 
 function destroyTask(){
@@ -1685,7 +1688,7 @@ function destroyTask(){
   addLog("deleted","Tarefa excluída permanentemente: "+(t?t.name:""),editTaskId);
   deletedIds[editTaskId]=Date.now();
   tasks=tasks.filter(function(x){return x.id!==editTaskId;});
-  saveAll();closeModal("tarefa");render();renderCal();renderArquivoPage();
+  var _sp3=saveAll();if(_sp3&&_sp3.then){_sp3.then(function(){closeModal("tarefa");render();renderCal();renderArquivoPage();});}else{closeModal("tarefa");render();renderCal();renderArquivoPage();}
 }
 
 // ============================================================
@@ -1781,7 +1784,7 @@ function saveReuniao(){
   var reun={id:editReunId||"reun"+Date.now(),title:title,desc:document.getElementById("f-reun-desc").value.trim(),projId:document.getElementById("f-reun-proj").value||null,date:document.getElementById("f-reun-date").value,start:start,end:end,participants:[...selectedParticipants],createdBy:u.email,createdAt:isNew?Date.now():(reunioes.find(function(x){return x.id===editReunId;})||{}).createdAt||Date.now(),updatedAt:Date.now()};
   if(isNew){reunioes=reunioes.concat([reun]);addLog("reun_created","Reunião criada: "+title,null,reun.id);}
   else{reunioes=reunioes.map(function(r){return r.id===editReunId?reun:r;});addLog("reun_edited","Reunião editada: "+title,null,reun.id);}
-  saveAll();closeModal("reuniao");renderReunioesSection();renderCal();
+  var _rsp=saveAll();if(_rsp&&_rsp.then){_rsp.then(function(){closeModal("reuniao");renderReunioesSection();renderCal();});}else{closeModal("reuniao");renderReunioesSection();renderCal();}
 }
 function deleteReuniao(){
   if(!isAdmin()){alert("Apenas o administrador pode excluir.");return;}
@@ -1789,7 +1792,7 @@ function deleteReuniao(){
   var r=reunioes.find(function(x){return x.id===editReunId;});
   addLog("reun_deleted","Reunião excluída: "+(r?r.title:""),null,editReunId);
   reunioes=reunioes.filter(function(r){return r.id!==editReunId;});
-  saveAll();closeModal("reuniao");renderReunioesSection();renderCal();
+  var _rsp2=saveAll();if(_rsp2&&_rsp2.then){_rsp2.then(function(){closeModal("reuniao");renderReunioesSection();renderCal();});}else{closeModal("reuniao");renderReunioesSection();renderCal();}
 }
 
 // ============================================================
@@ -2344,7 +2347,7 @@ function saveNota(){
   };
   if(isNew)notas=notas.concat([nota]);
   else notas=notas.map(function(n){return n.id===editNotaId?nota:n;});
-  saveAll();closeModal('nota');renderNotasPage();
+  var _nsp=saveAll();if(_nsp&&_nsp.then){_nsp.then(function(){closeModal('nota');renderNotasPage();});}else{closeModal('nota');renderNotasPage();}
 }
 
 function deleteNota(){
@@ -2355,7 +2358,7 @@ function deleteNota(){
   if(!isOwner){alert('Apenas o dono da nota pode excluí-la.');return;}
   deletedIds[editNotaId]=Date.now();
   notas=notas.filter(function(n){return n.id!==editNotaId;});
-  saveAll();closeModal('nota');renderNotasPage();
+  var _nsp2=saveAll();if(_nsp2&&_nsp2.then){_nsp2.then(function(){closeModal('nota');renderNotasPage();});}else{closeModal('nota');renderNotasPage();}
 }
 
 function getVisibleNotas(){
