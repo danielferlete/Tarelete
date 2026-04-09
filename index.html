@@ -737,12 +737,11 @@ window._signOut = async function(){ await signOut(auth); };
 // and filtering out anything that has been deleted (present in deletedIds).
 function _mergeById(remote, local, deleted){
   var map = {};
+  // Start with remote items as base
   (remote||[]).forEach(function(item){ map[item.id] = item; });
+  // Local items ALWAYS win — if we're saving, our version is authoritative
   (local||[]).forEach(function(item){
-    var r = map[item.id];
-    if(!r || (item.updatedAt||0) >= (r.updatedAt||0)){
-      map[item.id] = item;
-    }
+    map[item.id] = item;
   });
   // Remove items that were explicitly deleted
   if(deleted){
