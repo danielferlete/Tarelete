@@ -751,8 +751,11 @@ function _mergeById(remote, local, deleted){
   return Object.values(map);
 }
 
+let _isSaving = false;
+
 window._fbSave = async function(data){
   const ref = doc(db,"app","dados");
+  _isSaving = true;
   try {
     await runTransaction(db, async (tx) => {
       const snap = await tx.get(ref);
@@ -777,12 +780,19 @@ window._fbSave = async function(data){
       tx.set(ref, merged);
     });
   } catch(e){ console.error("Save error:",e); }
+  finally {
+    // Keep the flag true for a short grace period so the onSnapshot triggered
+    // by our own write doesn't overwrite local state right after we close the modal.
+    setTimeout(function(){ _isSaving = false; }, 2000);
+  }
 };
 
 let _unsubscribe = null;
 
 function _applyRemoteData(data){
-  // Don't overwrite local state if user has a modal open (editing in progress)
+  // Don't overwrite local state while a save is in progress (or just finished),
+  // or while the user has a modal open (editing in progress).
+  if(_isSaving) return;
   const modals = ['modal-tarefa','modal-reuniao','modal-nota'];
   const editing = modals.some(function(id){
     var el = document.getElementById(id);
