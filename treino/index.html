@@ -28,6 +28,7 @@
   --navy:#0c2340; --navy-2:#16325a; --on-navy:#ffffff; --on-navy-dim:#b8c6da;
   --bg:#eef2f6; --surface:#ffffff; --ink:#0f1d2e; --muted:#5b6a7c; --line:#d6dde6;
   --c-costas:#0b5a8a; --c-pant:#b4510e; --c-abd:#0b7552; --ok:#0b7552;
+  --c-peito:#b4233a; --c-perna:#6a3db0; --c-bracos:#0d7a84;
   --body-fill:#e4e9ef; --body-stroke:#c2cbd6; --photo-bg:#1b2533;
 
   --f-display:"Archivo","Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -38,6 +39,7 @@
     --navy:#0a1a30; --navy-2:#173356; --on-navy:#ffffff; --on-navy-dim:#9fb2cb;
     --bg:#08111c; --surface:#111d2b; --ink:#e7edf5; --muted:#93a3b6; --line:#233448;
     --c-costas:#3f9ade; --c-pant:#e5843f; --c-abd:#2fb585; --ok:#2fb585;
+    --c-peito:#ef5d70; --c-perna:#a384ea; --c-bracos:#38bdc8;
     --body-fill:#1d2b3c; --body-stroke:#33475e; --photo-bg:#050a11;
     color-scheme:dark;
   }
@@ -46,6 +48,7 @@
   --navy:#0a1a30; --navy-2:#173356; --on-navy:#ffffff; --on-navy-dim:#9fb2cb;
   --bg:#08111c; --surface:#111d2b; --ink:#e7edf5; --muted:#93a3b6; --line:#233448;
   --c-costas:#3f9ade; --c-pant:#e5843f; --c-abd:#2fb585; --ok:#2fb585;
+    --c-peito:#ef5d70; --c-perna:#a384ea; --c-bracos:#38bdc8;
   --body-fill:#1d2b3c; --body-stroke:#33475e; --photo-bg:#050a11;
   color-scheme:dark;
 }
@@ -200,6 +203,46 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--c-costas);
 .btn{height:46px;padding:0 18px;border-radius:12px;font-weight:700;background:var(--on-navy);color:var(--navy)}
 .btn.ghost{background:transparent;color:var(--on-navy);border:1px solid var(--navy-2)}
 
+/* ---------- Calendário ---------- */
+.cal{max-height:92%;overflow-y:auto;gap:12px}
+.calhead{display:flex;align-items:center;gap:8px}
+.calhead h3{flex:1;margin:0}
+.x{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:var(--bg);border:1px solid var(--line)}
+.x svg{width:18px;height:18px}
+.mnav{display:flex;align-items:center;gap:8px}
+.mnav b{flex:1;text-align:center;font-family:var(--f-display);font-size:17px;text-transform:capitalize}
+.calsum{font-size:12.5px;color:var(--muted);text-align:center;margin-top:-4px}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.wd{font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--muted);text-align:center;padding-bottom:2px}
+.day{aspect-ratio:1/1;max-width:100%;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  font-weight:600;font-size:14px;border:1px solid transparent;position:relative;font-variant-numeric:tabular-nums}
+.day.out{visibility:hidden}
+.day.has{background:color-mix(in srgb, var(--dc) 16%, var(--surface));color:var(--ink);font-weight:800}
+.day.today{border-color:var(--muted)}
+.day.sel{outline:2px solid var(--ink);outline-offset:1px}
+.day .dots{display:flex;gap:3px;height:6px}
+.day .dots i{width:6px;height:6px;border-radius:50%;background:var(--c)}
+.daydet{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+.daydet h4{margin:0;font-size:13px;font-weight:700}
+.entry{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:6px}
+.entry .top2{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tag{background:var(--c);color:#fff;font-weight:700;font-size:11.5px;padding:3px 9px;border-radius:999px;letter-spacing:.02em}
+.entry .meta{font-size:12.5px;color:var(--muted)}
+.entry .msg{margin:0;font-size:13.5px;line-height:1.45;color:var(--ink)}
+.entry details{font-size:12.5px;color:var(--muted)}
+.entry summary{cursor:pointer;font-weight:600}
+.entry ol{margin:6px 0 0;padding-left:20px;line-height:1.55}
+.entry .del{margin-left:auto;font-size:12px;font-weight:600;color:var(--muted);padding:4px 6px;border-radius:6px}
+.entry .del.armed{color:#c2410c}
+.nowk{font-size:13px;color:var(--muted);margin:0}
+.bk{display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
+.bk .btn2{height:40px;padding:0 14px;border-radius:10px;font-weight:700;background:var(--bg);border:1px solid var(--line)}
+.bk p{flex-basis:100%;font-size:11.5px;color:var(--muted);margin:0;line-height:1.45}
+.saved{display:inline-flex;align-items:center;gap:6px;margin-top:14px;font-size:13px;font-weight:600;color:#9be3bd}
+.saved svg{width:16px;height:16px}
+.btns-top{display:flex;gap:8px;flex:none}
+@media (max-width:430px){ .stat.ex{display:none} }
+
 /* ---------- Menu ---------- */
 .menu{position:fixed;inset:0;z-index:45;background:rgba(3,8,14,.5);display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:var(--surface);width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:18px var(--gr) calc(18px + var(--sab)) var(--gl);display:grid;gap:10px}
@@ -220,9 +263,14 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--c-costas);
       <div class="sub" id="sub">Costas · Panturrilha · Abdômen</div>
     </div>
     <div class="stats" id="stats"></div>
+    <div class="btns-top">
+    <button class="iconbtn" id="calBtn" aria-label="Calendário de treinos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><path d="M8.5 15l2.3 2.3 4.7-4.6"/></svg>
+    </button>
     <button class="iconbtn" id="menuBtn" aria-label="Opções e notificações">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
     </button>
+    </div>
   </header>
   <nav class="picker" id="picker" aria-label="Escolher ficha"></nav>
   <div class="prog" id="prog"></div>
@@ -249,7 +297,7 @@ const SECTIONS = {
   abdomen:     { label:'Abdômen',     color:'var(--c-abd)' }
 };
 const FICHAS = {
-  costas: { label:'Costas', exercises:[
+  costas: { label:'Costas', color:'var(--c-costas)', exercises:[
     { sec:'costas', name:'Pulley frente', banco:'Pulldown com Pegada Larga', equip:'cabo', reps:['12','10','8','8','6'],
       main:'Dorsais', second:'bíceps, meio das costas, ombros', img:'Wide-Grip_Lat_Pulldown', p:['lats'], s:['biceps','upper','shoulders'] },
     { sec:'costas', name:'Pulley articulado', banco:'Remada Alta na Máquina de Alavanca', equip:'máquina', reps:['12','12','12','12'],
@@ -267,9 +315,9 @@ const FICHAS = {
     { sec:'abdomen', name:'Infra', banco:'Abdominal Inverso', equip:'peso do corpo', reps:['15–20','15–20','15–20','15–20'],
       main:'Abdominais', second:'', img:'Reverse_Crunch', p:['abs'], s:[] }
   ]},
-  peito:  { label:'Peito',  exercises:[] },
-  perna:  { label:'Perna',  exercises:[] },
-  bracos: { label:'Braços', exercises:[] }
+  peito:  { label:'Peito',  color:'var(--c-peito)',  exercises:[] },
+  perna:  { label:'Perna',  color:'var(--c-perna)',  exercises:[] },
+  bracos: { label:'Braços', color:'var(--c-bracos)', exercises:[] }
 };
 
 /* ---------------- Mapa corporal (SVG próprio, frente e costas) ---------------- */
@@ -369,7 +417,7 @@ function renderHeader(){
   $('sub').textContent = secs.length ? secs.join(' · ') : f.label;
   const t = totals();
   $('stats').innerHTML = f.exercises.length
-    ? `<div class="stat"><b class="tab">${f.exercises.length}</b><span>exercícios</span></div><div class="stat"><b class="tab">${t.done}<small style="font-size:15px;opacity:.6">/${t.all}</small></b><span>séries</span></div>`
+    ? `<div class="stat ex"><b class="tab">${f.exercises.length}</b><span>exercícios</span></div><div class="stat"><b class="tab">${t.done}<small style="font-size:15px;opacity:.6">/${t.all}</small></b><span>séries</span></div>`
     : '';
 }
 
@@ -672,7 +720,7 @@ function openMenu(){
       ${st === 'default' ? '<button class="btn2" id="nOn">Ativar</button>' : st === 'granted' ? '<button class="btn2" id="nTest">Testar</button>' : ''}</div>
     <div class="row"><div><label>Descanso</label><p>${REST_SECONDS} segundos após cada série marcada.</p></div></div>
     <div class="row"><div><label>Zerar ficha de ${F().label.toLowerCase()}</label><p>Desmarca todas as séries.</p></div><button class="btn2 warn" id="rst">Zerar</button></div>
-    <p class="src">Fotos: free-exercise-db (Unlicense, domínio público). Toque numa série para marcar; toque de novo para desmarcar. O progresso fica salvo neste aparelho e reinicia sozinho depois de 10 horas sem uso.</p>
+    <p class="src">Fotos: free-exercise-db (Unlicense, domínio público). Os treinos concluídos ficam no calendário (ícone ao lado do sino). Toque numa série para marcar; toque de novo para desmarcar. O progresso fica salvo neste aparelho e reinicia sozinho depois de 10 horas sem uso.</p>
     <div class="row" style="border:0;padding-bottom:0"><span></span><button class="btn2" id="cls">Fechar</button></div>
   </div>`;
   document.body.appendChild(m);
@@ -696,6 +744,154 @@ function openMenu(){
   };
 }
 
+/* ---------------- Histórico e calendário ---------------- */
+const HKEY = 'ficha-treino-historico-v1';
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const pad2 = (n) => String(n).padStart(2, '0');
+const dayKey = (ts) => { const d = new Date(ts); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; };
+const fmtDay = (ts) => { const d = new Date(ts); return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}`; };
+const fmtHour = (ts) => { const d = new Date(ts); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+const fichaColor = (k) => (FICHAS[k] && FICHAS[k].color) || 'var(--c-costas)';
+
+function loadHist(){
+  try { const h = JSON.parse(localStorage.getItem(HKEY)); return Array.isArray(h) ? h : []; } catch(e){ return []; }
+}
+function saveHist(h){
+  try { localStorage.setItem(HKEY, JSON.stringify(h)); return true; } catch(e){ return false; }
+}
+function recordWorkout(){
+  const p = P(), f = F(), t = totals();
+  const fin = p.finishedAt || Date.now();
+  const start = p.startedAt || fin;
+  const entry = {
+    id: `${S.ficha}-${start}`,
+    date: dayKey(fin),
+    ficha: S.ficha,
+    label: f.label,
+    grupos: [...new Set(f.exercises.map(e => SECTIONS[e.sec].label))].join(' · '),
+    exercicios: f.exercises.map(e => e.name),
+    series: t.all,
+    startedAt: start,
+    finishedAt: fin,
+    msg: `Parabéns! Você terminou a ficha de ${f.label.toLowerCase()}. Todas as séries feitas.`
+  };
+  const h = loadHist();
+  const i = h.findIndex(e => e.id === entry.id);
+  if (i >= 0) h[i] = entry; else h.push(entry);
+  h.sort((a, b) => a.finishedAt - b.finishedAt);
+  entry.saved = saveHist(h);
+  // Pede ao navegador para não apagar estes dados quando faltar espaço.
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
+  return entry;
+}
+
+function openCalendar(focusDate){
+  const today = dayKey(Date.now());
+  let sel = focusDate || today;
+  let [vy, vm] = sel.split('-').map(Number); vm -= 1;
+  const m = document.createElement('div');
+  m.className = 'menu';
+  m.innerHTML = `<div class="sheet cal" role="dialog" aria-label="Calendário de treinos"></div>`;
+  document.body.appendChild(m);
+  const sheet = m.firstElementChild;
+  const close = () => m.remove();
+  m.addEventListener('click', ev => { if (ev.target === m) close(); });
+
+  function draw(){
+    const h = loadHist();
+    const byDay = {};
+    h.forEach(e => (byDay[e.date] = byDay[e.date] || []).push(e));
+    const monthKey = `${vy}-${pad2(vm+1)}`;
+    const nMonth = h.filter(e => e.date.startsWith(monthKey)).length;
+    const first = new Date(vy, vm, 1).getDay();
+    const days = new Date(vy, vm + 1, 0).getDate();
+    let cells = ['D','S','T','Q','Q','S','S'].map(w => `<div class="wd">${w}</div>`).join('');
+    for (let k = 0; k < first; k++) cells += `<div class="day out"></div>`;
+    for (let d = 1; d <= days; d++){
+      const key = `${monthKey}-${pad2(d)}`;
+      const es = byDay[key] || [];
+      const cls = ['day', es.length ? 'has' : '', key === today ? 'today' : '', key === sel ? 'sel' : ''].join(' ');
+      const dots = es.map(e => `<i style="--c:${fichaColor(e.ficha)}"></i>`).slice(0, 4).join('');
+      cells += `<button class="${cls}" data-day="${key}" style="--dc:${es.length ? fichaColor(es[0].ficha) : 'transparent'}" aria-label="${d} de ${MESES[vm]}${es.length ? ', ' + es.map(e => e.label).join(' e ') : ''}">${d}<span class="dots">${dots}</span></button>`;
+    }
+    const selEs = byDay[sel] || [];
+    const [sy, sm, sd] = sel.split('-').map(Number);
+    const wdName = new Date(sy, sm - 1, sd).toLocaleDateString('pt-BR', { weekday:'long' });
+    const det = selEs.length ? selEs.map(e => `<div class="entry">
+        <div class="top2"><span class="tag" style="--c:${fichaColor(e.ficha)}">${e.label}</span><span class="meta">${fmtHour(e.startedAt)} às ${fmtHour(e.finishedAt)} · ${fmtDur(e.finishedAt - e.startedAt)}</span>
+          <button class="del" data-del="${e.id}">Remover</button></div>
+        <p class="msg">${e.msg}</p>
+        <div class="meta">${e.exercicios.length} exercícios · ${e.series} séries${e.grupos ? ' · ' + e.grupos : ''}</div>
+        <details><summary>Exercícios</summary><ol>${e.exercicios.map(x => `<li>${x}</li>`).join('')}</ol></details>
+      </div>`).join('')
+      : `<p class="nowk">Nenhum treino concluído neste dia.</p>`;
+    sheet.innerHTML = `
+      <div class="calhead"><h3>Calendário de treinos</h3>
+        <button class="x" data-act="close" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="mnav">
+        <button class="x" data-act="prev" aria-label="Mês anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <b>${MESES[vm]} ${vy}</b>
+        <button class="x" data-act="next" aria-label="Próximo mês"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+      </div>
+      <div class="calsum">${nMonth} treino${nMonth === 1 ? '' : 's'} em ${MESES[vm]} · ${h.length} no total</div>
+      <div class="grid">${cells}</div>
+      <div class="daydet"><h4>${wdName.charAt(0).toUpperCase() + wdName.slice(1)}, ${sd} de ${MESES[sm-1]}</h4>${det}</div>
+      <div class="bk">
+        <button class="btn2" data-act="export">Exportar backup</button>
+        <button class="btn2" data-act="import">Importar backup</button>
+        <input type="file" id="impFile" accept="application/json,.json" hidden>
+        <p>O histórico fica salvo neste aparelho. Exporte um backup de vez em quando para não perder os registros se trocar de celular ou limpar os dados do navegador.</p>
+      </div>`;
+    sheet.querySelector('#impFile').onchange = (ev) => importHist(ev.target.files[0], draw);
+  }
+
+  sheet.addEventListener('click', ev => {
+    const b = ev.target.closest('button'); if (!b) return;
+    if (b.dataset.day){ sel = b.dataset.day; draw(); return; }
+    if (b.dataset.del){
+      if (!b.classList.contains('armed')){ b.classList.add('armed'); b.textContent = 'Confirmar remoção'; return; }
+      saveHist(loadHist().filter(e => e.id !== b.dataset.del)); draw(); toast('Treino removido do calendário.'); return;
+    }
+    const a = b.dataset.act;
+    if (a === 'close') close();
+    if (a === 'prev'){ vm--; if (vm < 0){ vm = 11; vy--; } draw(); }
+    if (a === 'next'){ vm++; if (vm > 11){ vm = 0; vy++; } draw(); }
+    if (a === 'export') exportHist();
+    if (a === 'import') sheet.querySelector('#impFile').click();
+  });
+  draw();
+}
+
+function exportHist(){
+  const data = JSON.stringify({ app:'ficha-treino', versao:1, exportadoEm:new Date().toISOString(), treinos:loadHist() }, null, 2);
+  try {
+    const url = URL.createObjectURL(new Blob([data], { type:'application/json' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = `historico-treino-${dayKey(Date.now())}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    toast('Backup exportado.');
+  } catch(e){ toast('Não foi possível exportar neste navegador.'); }
+}
+function importHist(file, after){
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      const inc = Array.isArray(d) ? d : d.treinos;
+      if (!Array.isArray(inc)) throw 0;
+      const h = loadHist(), ids = new Set(h.map(e => e.id));
+      let n = 0;
+      inc.forEach(e => { if (e && e.id && e.date && !ids.has(e.id)){ h.push(e); ids.add(e.id); n++; } });
+      h.sort((a, b) => a.finishedAt - b.finishedAt);
+      saveHist(h); after && after();
+      toast(n ? `${n} treino${n > 1 ? 's' : ''} importado${n > 1 ? 's' : ''}.` : 'Nenhum treino novo no arquivo.');
+    } catch(e){ toast('Arquivo inválido. Use um backup exportado por este app.'); }
+  };
+  r.readAsText(file);
+}
+
 /* ---------------- Concluído ---------------- */
 function fmtDur(ms){
   const m = Math.max(1, Math.round(ms / 60000));
@@ -703,24 +899,27 @@ function fmtDur(ms){
 }
 function showDone(){
   const p = P(), t = totals(), f = F();
+  const entry = recordWorkout();
   const ov = document.createElement('div');
   ov.className = 'done-ov';
   ov.innerHTML = `<canvas></canvas><div class="done-in">
     <svg class="trophy" viewBox="0 0 24 24" fill="currentColor"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3V3zm0 4H6v1a2 2 0 0 0 1 1.7V7zm10 0v2.7A2 2 0 0 0 18 8V7h-1z"/></svg>
     <h2>Parabéns!</h2>
-    <p>Você terminou a ficha de ${f.label.toLowerCase()}. Todas as séries feitas.</p>
+    <p>${entry.msg.replace(/^Parabéns! /, '')}</p>
     <div class="dstats">
       <div><b class="tab">${f.exercises.length}</b><span>exercícios</span></div>
       <div><b class="tab">${t.all}</b><span>séries</span></div>
       <div><b class="tab">${p.startedAt ? fmtDur((p.finishedAt || Date.now()) - p.startedAt) : '–'}</b><span>duração</span></div>
     </div>
-    <div class="dbtns"><button class="btn" id="dClose">Ver ficha</button><button class="btn ghost" id="dReset">Recomeçar</button></div>
+    <div class="dbtns"><button class="btn" id="dCal">Ver no calendário</button><button class="btn ghost" id="dClose">Ver ficha</button><button class="btn ghost" id="dReset">Recomeçar</button></div>
+    ${entry.saved ? `<div class="saved"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Salvo no calendário em ${fmtDay(entry.finishedAt)}</div>` : `<div class="saved" style="color:#ffb4a3">Não foi possível salvar no calendário neste navegador.</div>`}
   </div>`;
   document.body.appendChild(ov);
   if (navigator.vibrate) navigator.vibrate([80, 60, 80, 60, 200]);
   beep();
   const stop = confetti(ov.querySelector('canvas'));
   ov.querySelector('#dClose').onclick = () => { stop(); ov.remove(); };
+  ov.querySelector('#dCal').onclick = () => { stop(); ov.remove(); openCalendar(entry.date); };
   ov.querySelector('#dReset').onclick = () => { stop(); ov.remove(); S.prog[S.ficha] = freshProgress(); save(); renderAll(); };
 }
 function confetti(cv){
@@ -768,6 +967,7 @@ document.addEventListener('click', ev => {
 $('prev').onclick = () => go(P().idx - 1);
 $('next').onclick = () => go(P().idx + 1);
 $('menuBtn').onclick = openMenu;
+$('calBtn').onclick = () => openCalendar();
 document.addEventListener('keydown', ev => {
   if (document.querySelector('.menu,.lb,.done-ov')) { if (ev.key === 'Escape') document.querySelector('.menu,.lb')?.remove(); return; }
   if (ev.key === 'ArrowLeft') go(P().idx - 1);
