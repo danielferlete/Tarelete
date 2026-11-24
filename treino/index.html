@@ -28,7 +28,8 @@
   --navy:#0c2340; --navy-2:#16325a; --on-navy:#ffffff; --on-navy-dim:#b8c6da;
   --bg:#eef2f6; --surface:#ffffff; --ink:#0f1d2e; --muted:#5b6a7c; --line:#d6dde6;
   --c-costas:#0b5a8a; --c-pant:#b4510e; --c-abd:#0b7552; --ok:#0b7552;
-  --c-peito:#b4233a; --c-perna:#6a3db0; --c-bracos:#0d7a84;
+  --c-peito:#b4233a; --c-perna:#0d7a84; --c-bracos:#5b3a9e;
+  --c-bic:#5b3a9e; --c-tri:#8c1c3f;
   --body-fill:#e4e9ef; --body-stroke:#c2cbd6; --photo-bg:#1b2533;
 
   --f-display:"Archivo","Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -39,7 +40,8 @@
     --navy:#0a1a30; --navy-2:#173356; --on-navy:#ffffff; --on-navy-dim:#9fb2cb;
     --bg:#08111c; --surface:#111d2b; --ink:#e7edf5; --muted:#93a3b6; --line:#233448;
     --c-costas:#3f9ade; --c-pant:#e5843f; --c-abd:#2fb585; --ok:#2fb585;
-    --c-peito:#ef5d70; --c-perna:#a384ea; --c-bracos:#38bdc8;
+    --c-peito:#ef5d70; --c-perna:#38bdc8; --c-bracos:#a68cf0;
+    --c-bic:#a68cf0; --c-tri:#ec6a8f;
     --body-fill:#1d2b3c; --body-stroke:#33475e; --photo-bg:#050a11;
     color-scheme:dark;
   }
@@ -48,7 +50,8 @@
   --navy:#0a1a30; --navy-2:#173356; --on-navy:#ffffff; --on-navy-dim:#9fb2cb;
   --bg:#08111c; --surface:#111d2b; --ink:#e7edf5; --muted:#93a3b6; --line:#233448;
   --c-costas:#3f9ade; --c-pant:#e5843f; --c-abd:#2fb585; --ok:#2fb585;
-    --c-peito:#ef5d70; --c-perna:#a384ea; --c-bracos:#38bdc8;
+    --c-peito:#ef5d70; --c-perna:#38bdc8; --c-bracos:#a68cf0;
+    --c-bic:#a68cf0; --c-tri:#ec6a8f;
   --body-fill:#1d2b3c; --body-stroke:#33475e; --photo-bg:#050a11;
   color-scheme:dark;
 }
@@ -309,7 +312,9 @@ const IMG = 'img/';
 const SECTIONS = {
   costas:      { label:'Costas',      color:'var(--c-costas)' },
   panturrilha: { label:'Panturrilha', color:'var(--c-pant)' },
-  abdomen:     { label:'Abdômen',     color:'var(--c-abd)' }
+  abdomen:     { label:'Abdômen',     color:'var(--c-abd)' },
+  biceps:      { label:'Bíceps',      color:'var(--c-bic)' },
+  triceps:     { label:'Tríceps',     color:'var(--c-tri)' }
 };
 const FICHAS = {
   costas: { label:'Costas', color:'var(--c-costas)', exercises:[
@@ -332,7 +337,20 @@ const FICHAS = {
   ]},
   peito:  { label:'Peito',  color:'var(--c-peito)',  exercises:[] },
   perna:  { label:'Perna',  color:'var(--c-perna)',  exercises:[] },
-  bracos: { label:'Braços', color:'var(--c-bracos)', exercises:[] }
+  bracos: { label:'Braços', color:'var(--c-bracos)', exercises:[
+    { sec:'biceps', name:'Rosca direta no cross, barra reta', banco:'Rosca Direta com Barra na Polia em Pé', equip:'cabo', reps:['12','10','8','8'],
+      main:'Bíceps', second:'', img:'Standing_Biceps_Cable_Curl', p:['biceps'], s:[] },
+    { sec:'biceps', name:'Rosca Scott, barra W', banco:'Rosca Scott', equip:'barra W', reps:['12','10','8','8'],
+      main:'Bíceps', second:'', img:'Preacher_Curl', p:['biceps'], s:[] },
+    { sec:'biceps', name:'Rosca alternada', banco:'Rosca Alternada com Halteres', equip:'halteres', reps:['12','10','8','8'],
+      main:'Bíceps', second:'antebraços', img:'Dumbbell_Alternate_Bicep_Curl', p:['biceps'], s:['forearms'] },
+    { sec:'triceps', name:'Tríceps máquina', banco:'Tríceps Pulley Máquina', equip:'máquina', reps:['12','10','8','8'],
+      main:'Tríceps', second:'', img:'Machine_Triceps_Extension', p:['triceps'], s:[] },
+    { sec:'triceps', name:'Tríceps corda', banco:'Tríceps Pulley com Corda', equip:'cabo', reps:['12','10','8','8'],
+      main:'Tríceps', second:'', img:'Triceps_Pushdown_-_Rope_Attachment', p:['triceps'], s:[] },
+    { sec:'triceps', name:'Tríceps barra W', banco:'Tríceps Testa com Barra W', equip:'barra W', reps:['12','10','8','8'],
+      main:'Tríceps', second:'antebraços', img:'EZ-Bar_Skullcrusher', p:['triceps'], s:['forearms'] }
+  ]}
 };
 
 /* ---------------- Mapa corporal (SVG próprio, frente e costas) ---------------- */
@@ -484,7 +502,7 @@ function renderCards(){
     track.innerHTML = `<div class="slide"><div class="empty"><div>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/></svg>
       <h2>Ficha de ${f.label.toLowerCase()} ainda vazia</h2>
-      <p>Os exercícios desta ficha entram aqui quando forem cadastrados. Por enquanto, a ficha de costas está pronta.</p>
+      <p>Os exercícios desta ficha entram aqui quando forem cadastrados. Prontas por enquanto: ${Object.values(FICHAS).filter(x => x.exercises.length).map(x => x.label.toLowerCase()).join(' e ')}.</p>
     </div></div></div>`;
     track.style.transform = 'translateX(0)';
     return;
