@@ -1,0 +1,91 @@
+/* Service worker da Ficha de Treino.
+   1) Agenda a notificação de fim do descanso, que aparece mesmo com o app em segundo plano.
+   2) Guarda o app e as fotos em cache para abrir sem internet na academia. */
+const CACHE = 'ficha-treino-v1';
+const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
+
+self.addEventListener('install', (e) => {
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+});
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
+});
+
+// Rede primeiro para o HTML (pega atualizações), cache primeiro para o resto.
+self.addEventListener('fetch', (e) => {
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  const sameOrigin = url.origin === self.location.origin;
+  const isFont = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
+  if (!sameOrigin && !isFont) return;
+
+  if (req.mode === 'navigate') {
+    e.respondWith(
+      fetch(req).then((res) => { const copy = res.clone(); caches.open(CACHE).then((c) => c.put('./index.html', copy)); return res; })
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+  e.respondWith(
+    caches.match(req).then((hit) => hit || fetch(req).then((res) => {
+      if (res.ok || res.type === 'opaque') { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
+      return res;
+    }))
+  );
+});
+
+/* ---- Descanso ---- */
+let pending = null; // { timer, resolve }
+
+function cancelPending() {
+  if (pending) { clearTimeout(pending.timer); pending.resolve(); pending = null; }
+}
+
+async function show(d) {
+  if (!d.force) {
+    // Com o app aberto na tela, quem avisa é a própria página (som e vibração).
+    const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    if (wins.some((w) => w.visibilityState === 'visible' && w.focused)) return;
+  }
+  await self.registration.showNotification(d.title || 'Descanso encerrado', {
+    body: d.body || 'Hora da próxima série',
+    tag: 'descanso',
+    renotify: true,
+    requireInteraction: false,
+    vibrate: [300, 120, 300, 120, 300],
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    data: { url: self.registration.scope }
+  });
+}
+
+self.addEventListener('message', (e) => {
+  const d = e.data || {};
+  if (d.type === 'cancel') { cancelPending(); return; }
+  if (d.type !== 'schedule') return;
+  cancelPending();
+  const delay = Math.max(0, (d.at || 0) - Date.now());
+  // waitUntil mantém o service worker vivo até o descanso acabar.
+  e.waitUntil(new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      pending = null;
+      show(d).catch(() => {}).finally(resolve);
+    }, delay);
+    pending = { timer, resolve };
+  }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
+      for (const w of wins) { if ('focus' in w) return w.focus(); }
+      return self.clients.openWindow((e.notification.data && e.notification.data.url) || './');
+    })
+  );
+});
