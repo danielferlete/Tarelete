@@ -29,7 +29,7 @@
   --bg:#eef2f6; --surface:#ffffff; --ink:#0f1d2e; --muted:#5b6a7c; --line:#d6dde6;
   --c-costas:#0b5a8a; --c-pant:#b4510e; --c-abd:#0b7552; --ok:#0b7552;
   --c-peito:#b4233a; --c-perna:#0d7a84; --c-bracos:#5b3a9e;
-  --c-bic:#5b3a9e; --c-tri:#8c1c3f;
+  --c-bic:#5b3a9e; --c-tri:#8c1c3f; --c-cardio:#b85c00;
   --body-fill:#e4e9ef; --body-stroke:#c2cbd6; --photo-bg:#1b2533;
 
   --f-display:"Archivo","Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -41,7 +41,7 @@
     --bg:#08111c; --surface:#111d2b; --ink:#e7edf5; --muted:#93a3b6; --line:#233448;
     --c-costas:#3f9ade; --c-pant:#e5843f; --c-abd:#2fb585; --ok:#2fb585;
     --c-peito:#ef5d70; --c-perna:#38bdc8; --c-bracos:#a68cf0;
-    --c-bic:#a68cf0; --c-tri:#ec6a8f;
+    --c-bic:#a68cf0; --c-tri:#ec6a8f; --c-cardio:#f2a03d;
     --body-fill:#1d2b3c; --body-stroke:#33475e; --photo-bg:#050a11;
     color-scheme:dark;
   }
@@ -51,7 +51,7 @@
   --bg:#08111c; --surface:#111d2b; --ink:#e7edf5; --muted:#93a3b6; --line:#233448;
   --c-costas:#3f9ade; --c-pant:#e5843f; --c-abd:#2fb585; --ok:#2fb585;
     --c-peito:#ef5d70; --c-perna:#38bdc8; --c-bracos:#a68cf0;
-    --c-bic:#a68cf0; --c-tri:#ec6a8f;
+    --c-bic:#a68cf0; --c-tri:#ec6a8f; --c-cardio:#f2a03d;
   --body-fill:#1d2b3c; --body-stroke:#33475e; --photo-bg:#050a11;
   color-scheme:dark;
 }
@@ -83,7 +83,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--c-costas);
 /* ---------- Seletor de ficha ---------- */
 .picker{display:flex;gap:6px;padding:8px var(--gr) 8px var(--gl);background:var(--navy);overflow-x:auto;scrollbar-width:none}
 .picker::-webkit-scrollbar{display:none}
-.chip{flex:none;padding:7px 14px;border-radius:999px;font-weight:600;font-size:13px;color:var(--on-navy-dim);background:transparent;border:1px solid var(--navy-2)}
+.chip{flex:none;padding:7px 13px;border-radius:999px;font-weight:600;font-size:13px;color:var(--on-navy-dim);background:transparent;border:1px solid var(--navy-2)}
 .chip[aria-pressed="true"]{background:var(--on-navy);color:var(--navy);border-color:var(--on-navy)}
 .chip.soon{opacity:.55}
 
@@ -246,12 +246,23 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--c-costas);
 .mchip{padding:8px 13px;border-radius:999px;border:1.5px solid var(--c);color:var(--c);font-weight:700;font-size:13px}
 .mchip[aria-pressed="true"]{background:var(--c);color:#fff}
 .mrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mform textarea{width:100%;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:15px;padding:10px;min-width:0;resize:vertical;line-height:1.45}
+.mform textarea:focus{outline:2px solid var(--c-costas);outline-offset:1px}
 .mform input{width:100%;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:15px;padding:0 10px;min-width:0}
 .mform input:focus{outline:2px solid var(--c-costas);outline-offset:1px}
 .mbtns{display:flex;gap:8px;justify-content:flex-end}
 .mbtns button{height:42px;padding:0 16px;border-radius:10px;font-weight:700;background:var(--bg);border:1px solid var(--line)}
 .mbtns .pri{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .mtag{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+.cform{border:0;padding:0}
+.qchip{padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--bg);font-weight:600;font-size:13px}
+.savebig{height:50px;border-radius:12px;background:var(--c);color:#fff;font-family:var(--f-display);font-weight:800;font-size:16px;letter-spacing:.01em}
+.ctoday{border-top:1px solid var(--line);padding-top:12px;display:grid;gap:8px}
+.ctoday h3{margin:0;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.03em}
+.citem{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.45}
+.citem time{flex:none;font-weight:700;color:var(--c);font-variant-numeric:tabular-nums;min-width:44px}
+.citem span{flex:1;min-width:0;overflow-wrap:anywhere}
+.citem small{color:var(--muted);flex:none}
 .entry .nota{margin:0;font-size:13px;color:var(--ink);background:var(--bg);border-radius:8px;padding:7px 9px;line-height:1.45}
 .bk{display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
 .bk .btn2{height:40px;padding:0 14px;border-radius:10px;font-weight:700;background:var(--bg);border:1px solid var(--line)}
@@ -350,7 +361,8 @@ const FICHAS = {
       main:'Tríceps', second:'', img:'Triceps_Pushdown_-_Rope_Attachment', p:['triceps'], s:[] },
     { sec:'triceps', name:'Tríceps barra W', banco:'Tríceps Testa com Barra W', equip:'barra W', reps:['12','10','8','8'],
       main:'Tríceps', second:'antebraços', img:'EZ-Bar_Skullcrusher', p:['triceps'], s:['forearms'] }
-  ]}
+  ]},
+  cardio: { label:'Cárdio', color:'var(--c-cardio)', cardio:true, exercises:[] }
 };
 
 /* ---------------- Mapa corporal (SVG próprio, frente e costas) ---------------- */
@@ -440,14 +452,21 @@ const track = $('track');
 function renderPicker(){
   $('picker').innerHTML = Object.entries(FICHAS).map(([k, f]) => {
     const n = f.exercises.length;
-    return `<button class="chip${n ? '' : ' soon'}" data-ficha="${k}" aria-pressed="${k===S.ficha}"${n ? '' : ' title="Ficha ainda vazia"'}>${f.label}</button>`;
+    const soon = !n && !f.cardio;
+    return `<button class="chip${soon ? ' soon' : ''}" data-ficha="${k}" aria-pressed="${k===S.ficha}"${soon ? ' title="Ficha ainda vazia"' : ''}>${f.label}</button>`;
   }).join('');
 }
 
 function renderHeader(){
   const f = F();
   const secs = [...new Set(f.exercises.map(e => SECTIONS[e.sec].label))];
-  $('sub').textContent = secs.length ? secs.join(' · ') : f.label;
+  $('sub').textContent = f.cardio ? 'Registro livre' : secs.length ? secs.join(' · ') : f.label;
+  if (f.cardio){
+    const mk = dayKey(Date.now()).slice(0, 7);
+    const n = loadHist().filter(e => e.ficha === 'cardio' && e.date.startsWith(mk)).length;
+    $('stats').innerHTML = `<div class="stat"><b class="tab">${n}</b><span>no mês</span></div>`;
+    return;
+  }
   const t = totals();
   $('stats').innerHTML = f.exercises.length
     ? `<div class="stat ex"><b class="tab">${f.exercises.length}</b><span>exercícios</span></div><div class="stat"><b class="tab">${t.done}<small style="font-size:15px;opacity:.6">/${t.all}</small></b><span>séries</span></div>`
@@ -496,8 +515,67 @@ function cardHTML(e, i){
   </article></section>`;
 }
 
+const CARDIO_SUG = ['Esteira','Bicicleta','Elíptico','Escada','Corrida','Caminhada','Natação','Pular corda'];
+function cardioEntry(start, dur, desc, manual){
+  return { id:`cardio-${Date.now()}`, date:dayKey(start), ficha:'cardio', label:'Cárdio', desc,
+    exercicios:[], series:0, startedAt:start, finishedAt:start + dur * 60000, msg:'', manual:!!manual };
+}
+function pushEntry(entry){
+  const h = loadHist(); h.push(entry); h.sort((a, b) => a.finishedAt - b.finishedAt);
+  const ok = saveHist(h);
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
+  return ok;
+}
+function renderCardio(){
+  const now = new Date();
+  const hh = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+  const today = dayKey(Date.now());
+  const todays = loadHist().filter(e => e.ficha === 'cardio' && e.date === today);
+  track.innerHTML = `<section class="slide"><article class="card" style="--c:var(--c-cardio)">
+    <div class="band"><b>Cárdio</b><span>registro livre</span></div>
+    <div class="cbody" style="grid-template-columns:1fr;grid-template-areas:none">
+      <div class="head"><div class="num"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg></div>
+        <div><h2>Registrar cárdio</h2><div class="banco">Descreva o que você fez. O registro vai para o calendário.</div></div></div>
+      <div class="mform cform">
+        <label for="cDesc"><span class="lab">O que você fez</span></label>
+        <div class="mchips" style="margin-top:-6px">${CARDIO_SUG.map(x => `<button class="qchip" data-sug="${x}">${x}</button>`).join('')}</div>
+        <textarea id="cDesc" rows="4" maxlength="500" placeholder="Ex.: esteira, inclinação 8, 6 km/h, depois 10 min de bicicleta"></textarea>
+        <div class="mrow">
+          <label><span class="lab">Início</span><input type="time" id="cHora" value="${hh}"></label>
+          <label><span class="lab">Duração (min)</span><input type="number" id="cDur" value="30" min="1" max="600" inputmode="numeric"></label>
+        </div>
+        <button class="savebig" id="cSave">Salvar cárdio</button>
+      </div>
+      <div class="ctoday"><h3>HOJE</h3>${todays.length
+        ? todays.map(e => `<div class="citem"><time>${fmtHour(e.startedAt)}</time><span>${esc(e.desc)}</span><small>${fmtDur(e.finishedAt - e.startedAt)}</small></div>`).join('')
+        : '<p class="nowk">Nenhum cárdio registrado hoje.</p>'}</div>
+    </div>
+  </article></section>`;
+  track.style.transform = 'translateX(0)';
+  const ta = $('cDesc');
+  track.querySelectorAll('[data-sug]').forEach(b => b.onclick = (ev) => {
+    ev.stopPropagation();
+    const v = ta.value.trim();
+    ta.value = v ? `${v}, ${b.dataset.sug.toLowerCase()}` : `${b.dataset.sug} `;
+    ta.focus();
+  });
+  $('cSave').onclick = () => {
+    const desc = ta.value.trim();
+    if (!desc){ toast('Descreva o que você fez antes de salvar.'); ta.focus(); return; }
+    const [h, m] = ($('cHora').value || hh).split(':').map(Number);
+    const d = new Date(); d.setHours(h || 0, m || 0, 0, 0);
+    const dur = Math.max(1, Math.min(600, parseInt($('cDur').value, 10) || 30));
+    if (pushEntry(cardioEntry(d.getTime(), dur, desc, false))){
+      toast('Cárdio salvo no calendário.');
+      if (navigator.vibrate) navigator.vibrate(40);
+      renderCardio(); renderHeader();
+    } else toast('Não foi possível salvar neste navegador.');
+  };
+}
+
 function renderCards(){
   const f = F();
+  if (f.cardio){ renderCardio(); return; }
   if (!f.exercises.length){
     track.innerHTML = `<div class="slide"><div class="empty"><div>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/></svg>
@@ -532,6 +610,7 @@ function renderNav(){
   const t = totals();
   $('mid').innerHTML = n
     ? `<div class="count"><b class="tab">Exercício ${P().idx+1} de ${n}</b><span class="tab">${t.done} de ${t.all} séries feitas</span></div>`
+    : F().cardio ? `<div class="count"><b>Cárdio</b><span>Salvo direto no calendário</span></div>`
     : `<div class="count"><span>Escolha outra ficha</span></div>`;
 }
 
@@ -855,9 +934,9 @@ function openCalendar(focusDate){
     const wdName = new Date(sy, sm - 1, sd).toLocaleDateString('pt-BR', { weekday:'long' });
     const exs = (e) => e.exercicios || [];
     let det = selEs.length ? selEs.map(e => `<div class="entry">
-        <div class="top2"><span class="tag" style="--c:${fichaColor(e.ficha)}">${e.label}</span>${e.manual ? '<span class="mtag">manual</span>' : ''}<span class="meta">${fmtHour(e.startedAt)} às ${fmtHour(e.finishedAt)} · ${fmtDur(e.finishedAt - e.startedAt)}</span>
+        <div class="top2"><span class="tag" style="--c:${fichaColor(e.ficha)}">${e.label}</span>${e.manual && e.ficha !== 'cardio' ? '<span class="mtag">manual</span>' : ''}<span class="meta">${fmtHour(e.startedAt)} às ${fmtHour(e.finishedAt)} · ${fmtDur(e.finishedAt - e.startedAt)}</span>
           <button class="del" data-del="${e.id}">Remover</button></div>
-        <p class="msg">${e.msg}</p>
+        <p class="msg">${e.ficha === 'cardio' ? esc(e.desc || '') : e.msg}</p>
         ${e.nota ? `<p class="nota">${esc(e.nota)}</p>` : ''}
         ${exs(e).length ? `<div class="meta">${exs(e).length} exercícios · ${e.series} séries${e.grupos ? ' · ' + e.grupos : ''}</div>
         <details><summary>Exercícios</summary><ol>${exs(e).map(x => `<li>${x}</li>`).join('')}</ol></details>` : ''}
@@ -873,7 +952,7 @@ function openCalendar(focusDate){
           <label><span class="lab">Início</span><input type="time" id="mHora" value="${defHour}"></label>
           <label><span class="lab">Duração (min)</span><input type="number" id="mDur" value="60" min="1" max="600" inputmode="numeric"></label>
         </div>
-        <label><span class="lab">Observação (opcional)</span><input type="text" id="mNota" maxlength="200" placeholder="Ex.: aumentei a carga na remada"></label>
+        <label><span class="lab" id="mNotaLab">${mFicha === 'cardio' ? 'O que você fez' : 'Observação (opcional)'}</span><textarea id="mNota" rows="2" maxlength="500" placeholder="${mFicha === 'cardio' ? 'Ex.: 30 min de esteira, inclinação 8' : 'Ex.: aumentei a carga na remada'}"></textarea></label>
         <div class="mbtns"><button data-act="cancel">Cancelar</button><button class="pri" data-act="save">Salvar treino</button></div>
       </div>`;
     } else if (sel <= today){
@@ -905,6 +984,9 @@ function openCalendar(focusDate){
     if (b.dataset.mf){
       mFicha = b.dataset.mf;
       sheet.querySelectorAll('.mchip').forEach(c => c.setAttribute('aria-pressed', c.dataset.mf === mFicha));
+      const c = mFicha === 'cardio';
+      sheet.querySelector('#mNotaLab').textContent = c ? 'O que você fez' : 'Observação (opcional)';
+      sheet.querySelector('#mNota').placeholder = c ? 'Ex.: 30 min de esteira, inclinação 8' : 'Ex.: aumentei a carga na remada';
       return;
     }
     if (b.dataset.del){
@@ -922,6 +1004,12 @@ function openCalendar(focusDate){
       const [y, mo, d] = sel.split('-').map(Number);
       const start = new Date(y, mo - 1, d, hora[0] || 0, hora[1] || 0).getTime();
       const f = FICHAS[mFicha];
+      if (f.cardio){
+        if (!nota){ toast('Descreva o que você fez antes de salvar.'); sheet.querySelector('#mNota').focus(); return; }
+        if (pushEntry(cardioEntry(start, dur, nota, true))){ adding = false; draw(); toast(`Cárdio salvo em ${fmtDay(start)}.`); renderHeader(); }
+        else toast('Não foi possível salvar neste navegador.');
+        return;
+      }
       const entry = {
         id: `${mFicha}-manual-${Date.now()}`, date: sel, ficha: mFicha, label: f.label,
         grupos: [...new Set(f.exercises.map(e => SECTIONS[e.sec].label))].join(' · '),

@@ -1,7 +1,7 @@
 /* Service worker da Ficha de Treino.
    1) Agenda a notificação de fim do descanso, que aparece mesmo com o app em segundo plano.
    2) Guarda o app e as fotos em cache para abrir sem internet na academia. */
-const CACHE = 'ficha-treino-v3';
+const CACHE = 'ficha-treino-v4';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
