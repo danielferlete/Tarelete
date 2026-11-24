@@ -235,6 +235,21 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--c-costas);
 .entry .del{margin-left:auto;font-size:12px;font-weight:600;color:var(--muted);padding:4px 6px;border-radius:6px}
 .entry .del.armed{color:#c2410c}
 .nowk{font-size:13px;color:var(--muted);margin:0}
+.addbtn{height:44px;border-radius:10px;border:1.5px dashed var(--line);font-weight:700;color:var(--ink);display:flex;align-items:center;justify-content:center;gap:6px}
+.addbtn svg{width:18px;height:18px}
+.mform{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:12px}
+.mform .lab{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.03em;margin-bottom:6px;display:block}
+.mchips{display:flex;gap:6px;flex-wrap:wrap}
+.mchip{padding:8px 13px;border-radius:999px;border:1.5px solid var(--c);color:var(--c);font-weight:700;font-size:13px}
+.mchip[aria-pressed="true"]{background:var(--c);color:#fff}
+.mrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mform input{width:100%;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:15px;padding:0 10px;min-width:0}
+.mform input:focus{outline:2px solid var(--c-costas);outline-offset:1px}
+.mbtns{display:flex;gap:8px;justify-content:flex-end}
+.mbtns button{height:42px;padding:0 16px;border-radius:10px;font-weight:700;background:var(--bg);border:1px solid var(--line)}
+.mbtns .pri{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.mtag{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+.entry .nota{margin:0;font-size:13px;color:var(--ink);background:var(--bg);border-radius:8px;padding:7px 9px;line-height:1.45}
 .bk{display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
 .bk .btn2{height:40px;padding:0 14px;border-radius:10px;font-weight:700;background:var(--bg);border:1px solid var(--line)}
 .bk p{flex-basis:100%;font-size:11.5px;color:var(--muted);margin:0;line-height:1.45}
@@ -751,6 +766,7 @@ const pad2 = (n) => String(n).padStart(2, '0');
 const dayKey = (ts) => { const d = new Date(ts); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; };
 const fmtDay = (ts) => { const d = new Date(ts); return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}`; };
 const fmtHour = (ts) => { const d = new Date(ts); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+const esc = (t) => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fichaColor = (k) => (FICHAS[k] && FICHAS[k].color) || 'var(--c-costas)';
 
 function loadHist(){
@@ -788,6 +804,8 @@ function recordWorkout(){
 function openCalendar(focusDate){
   const today = dayKey(Date.now());
   let sel = focusDate || today;
+  let adding = false;
+  let mFicha = 'costas';
   let [vy, vm] = sel.split('-').map(Number); vm -= 1;
   const m = document.createElement('div');
   m.className = 'menu';
@@ -817,14 +835,32 @@ function openCalendar(focusDate){
     const selEs = byDay[sel] || [];
     const [sy, sm, sd] = sel.split('-').map(Number);
     const wdName = new Date(sy, sm - 1, sd).toLocaleDateString('pt-BR', { weekday:'long' });
-    const det = selEs.length ? selEs.map(e => `<div class="entry">
-        <div class="top2"><span class="tag" style="--c:${fichaColor(e.ficha)}">${e.label}</span><span class="meta">${fmtHour(e.startedAt)} às ${fmtHour(e.finishedAt)} · ${fmtDur(e.finishedAt - e.startedAt)}</span>
+    const exs = (e) => e.exercicios || [];
+    let det = selEs.length ? selEs.map(e => `<div class="entry">
+        <div class="top2"><span class="tag" style="--c:${fichaColor(e.ficha)}">${e.label}</span>${e.manual ? '<span class="mtag">manual</span>' : ''}<span class="meta">${fmtHour(e.startedAt)} às ${fmtHour(e.finishedAt)} · ${fmtDur(e.finishedAt - e.startedAt)}</span>
           <button class="del" data-del="${e.id}">Remover</button></div>
         <p class="msg">${e.msg}</p>
-        <div class="meta">${e.exercicios.length} exercícios · ${e.series} séries${e.grupos ? ' · ' + e.grupos : ''}</div>
-        <details><summary>Exercícios</summary><ol>${e.exercicios.map(x => `<li>${x}</li>`).join('')}</ol></details>
+        ${e.nota ? `<p class="nota">${esc(e.nota)}</p>` : ''}
+        ${exs(e).length ? `<div class="meta">${exs(e).length} exercícios · ${e.series} séries${e.grupos ? ' · ' + e.grupos : ''}</div>
+        <details><summary>Exercícios</summary><ol>${exs(e).map(x => `<li>${x}</li>`).join('')}</ol></details>` : ''}
       </div>`).join('')
-      : `<p class="nowk">Nenhum treino concluído neste dia.</p>`;
+      : (adding ? '' : `<p class="nowk">Nenhum treino registrado neste dia.</p>`);
+    if (adding){
+      const now = new Date();
+      const defHour = sel === today ? `${pad2(now.getHours())}:${pad2(now.getMinutes())}` : '07:00';
+      det += `<div class="mform">
+        <div><span class="lab">Ficha</span><div class="mchips">${Object.entries(FICHAS).map(([k, f]) =>
+          `<button class="mchip" data-mf="${k}" style="--c:${f.color}" aria-pressed="${k === mFicha}">${f.label}</button>`).join('')}</div></div>
+        <div class="mrow">
+          <label><span class="lab">Início</span><input type="time" id="mHora" value="${defHour}"></label>
+          <label><span class="lab">Duração (min)</span><input type="number" id="mDur" value="60" min="1" max="600" inputmode="numeric"></label>
+        </div>
+        <label><span class="lab">Observação (opcional)</span><input type="text" id="mNota" maxlength="200" placeholder="Ex.: aumentei a carga na remada"></label>
+        <div class="mbtns"><button data-act="cancel">Cancelar</button><button class="pri" data-act="save">Salvar treino</button></div>
+      </div>`;
+    } else if (sel <= today){
+      det += `<button class="addbtn" data-act="add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Adicionar treino neste dia</button>`;
+    }
     sheet.innerHTML = `
       <div class="calhead"><h3>Calendário de treinos</h3>
         <button class="x" data-act="close" aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
@@ -847,13 +883,41 @@ function openCalendar(focusDate){
 
   sheet.addEventListener('click', ev => {
     const b = ev.target.closest('button'); if (!b) return;
-    if (b.dataset.day){ sel = b.dataset.day; draw(); return; }
+    if (b.dataset.day){ sel = b.dataset.day; adding = false; draw(); return; }
+    if (b.dataset.mf){
+      mFicha = b.dataset.mf;
+      sheet.querySelectorAll('.mchip').forEach(c => c.setAttribute('aria-pressed', c.dataset.mf === mFicha));
+      return;
+    }
     if (b.dataset.del){
       if (!b.classList.contains('armed')){ b.classList.add('armed'); b.textContent = 'Confirmar remoção'; return; }
       saveHist(loadHist().filter(e => e.id !== b.dataset.del)); draw(); toast('Treino removido do calendário.'); return;
     }
     const a = b.dataset.act;
     if (a === 'close') close();
+    if (a === 'add'){ adding = true; draw(); sheet.querySelector('.mform').scrollIntoView({ block:'nearest', behavior:'smooth' }); }
+    if (a === 'cancel'){ adding = false; draw(); }
+    if (a === 'save'){
+      const hora = (sheet.querySelector('#mHora').value || '07:00').split(':').map(Number);
+      const dur = Math.max(1, Math.min(600, parseInt(sheet.querySelector('#mDur').value, 10) || 60));
+      const nota = sheet.querySelector('#mNota').value.trim();
+      const [y, mo, d] = sel.split('-').map(Number);
+      const start = new Date(y, mo - 1, d, hora[0] || 0, hora[1] || 0).getTime();
+      const f = FICHAS[mFicha];
+      const entry = {
+        id: `${mFicha}-manual-${Date.now()}`, date: sel, ficha: mFicha, label: f.label,
+        grupos: [...new Set(f.exercises.map(e => SECTIONS[e.sec].label))].join(' · '),
+        exercicios: f.exercises.map(e => e.name),
+        series: f.exercises.reduce((n, e) => n + e.reps.length, 0),
+        startedAt: start, finishedAt: start + dur * 60000,
+        msg: `Treino de ${f.label.toLowerCase()} registrado manualmente.`,
+        nota, manual: true
+      };
+      const h = loadHist(); h.push(entry); h.sort((p, q) => p.finishedAt - q.finishedAt);
+      if (saveHist(h)){ adding = false; draw(); toast(`Treino de ${f.label.toLowerCase()} salvo em ${fmtDay(start)}.`); }
+      else toast('Não foi possível salvar neste navegador.');
+    }
+    if (a === 'prev' || a === 'next') adding = false;
     if (a === 'prev'){ vm--; if (vm < 0){ vm = 11; vy--; } draw(); }
     if (a === 'next'){ vm++; if (vm > 11){ vm = 0; vy++; } draw(); }
     if (a === 'export') exportHist();
