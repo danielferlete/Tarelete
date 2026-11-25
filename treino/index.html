@@ -428,9 +428,10 @@ function figure(side, ex){
 
 /* ---------------- Estado ---------------- */
 const KEY = 'ficha-treino-v1';
-const STALE_MS = 10 * 3600 * 1000; // progresso com mais de 10 h vira treino novo
+const STALE_MS = 3 * 3600 * 1000; // 3 h sem marcar séries: o próximo toque começa um treino novo
+const GAP_MS = 90 * 60 * 1000;    // pausa maior que 90 min separa sessões
 let S;
-function freshProgress(){ return { done:{}, idx:0, startedAt:null, finishedAt:null, updatedAt:null }; }
+function freshProgress(){ return { done:{}, times:{}, idx:0, startedAt:null, finishedAt:null, updatedAt:null }; }
 function load(){
   let d = null;
   try { d = JSON.parse(localStorage.getItem(KEY)); } catch(e){}
@@ -443,6 +444,26 @@ function load(){
   return d;
 }
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+
+// Início real do treino: horário da primeira série feita depois da última pausa longa.
+// Séries desmarcadas não contam, e um toque perdido horas antes não puxa o início para trás.
+function sessionStart(p){
+  const ts = [];
+  Object.keys(p.done || {}).forEach(i => (p.done[i] || []).forEach((ok, j) => {
+    const t = p.times && p.times[i] && p.times[i][j];
+    if (ok && t) ts.push(t);
+  }));
+  if (!ts.length) return p.startedAt || null;
+  ts.sort((a, b) => a - b);
+  let start = ts[0];
+  for (let k = 1; k < ts.length; k++) if (ts[k] - ts[k-1] > GAP_MS) start = ts[k];
+  return start;
+}
+function staleCheck(){
+  const p = P();
+  if (p && p.updatedAt && Date.now() - p.updatedAt > STALE_MS){ S.prog[S.ficha] = freshProgress(); save(); return true; }
+  return false;
+}
 
 // Última carga anotada por exercício (não zera com o treino).
 const LKEY = 'ficha-treino-cargas-v1';
@@ -669,10 +690,17 @@ function go(i){
 /* ---------------- Séries ---------------- */
 function toggleSet(i, j){
   unlockAudio();
+  if (staleCheck()){ stopRest(); renderAll(); }
   const p = P(), d = doneArr(i);
   d[j] = !d[j];
-  p.updatedAt = Date.now();
-  if (d[j] && !p.startedAt) p.startedAt = Date.now();
+  const now = Date.now();
+  p.updatedAt = now;
+  if (!p.times) p.times = {};
+  if (!p.times[i]) p.times[i] = [];
+  p.times[i][j] = d[j] ? now : null;
+  if (d[j] && !p.sid) p.sid = `${S.ficha}-${now}`;
+  if (d[j] && !p.startedAt) p.startedAt = now;
+  if (!d[j] && !p.closed && totals().done === 0){ p.startedAt = null; p.sid = null; }
   if (d[j] && navigator.vibrate) navigator.vibrate(30);
   save();
   updateCard(i); renderHeader(); renderProgress();
@@ -819,6 +847,7 @@ function restEnded(){
 }
 
 document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !S.restEnd && staleCheck()) renderAll();
   if (document.visibilityState === 'visible' && S.restEnd){
     if (S.restEnd <= Date.now()) restEnded(); else tick();
   }
@@ -987,10 +1016,10 @@ function saveHist(h){
 function recordWorkout(){
   const p = P(), f = F(), t = totals();
   const fin = p.finishedAt || Date.now();
-  const start = p.startedAt || fin;
+  const start = sessionStart(p) || fin;
   const completo = t.done === t.all;
   const entry = {
-    id: `${S.ficha}-${start}`,
+    id: p.sid || `${S.ficha}-${p.startedAt || start}`,
     date: dayKey(fin),
     ficha: S.ficha,
     label: f.label,
@@ -1031,6 +1060,7 @@ function openCalendar(focusDate){
   const today = dayKey(Date.now());
   let sel = focusDate || today;
   let adding = false;
+  let editing = null;
   let mFicha = 'costas';
   let [vy, vm] = sel.split('-').map(Number); vm -= 1;
   const m = document.createElement('div');
@@ -1064,7 +1094,11 @@ function openCalendar(focusDate){
     const exs = (e) => e.exercicios || [];
     let det = selEs.length ? selEs.map(e => `<div class="entry">
         <div class="top2"><span class="tag" style="--c:${fichaColor(e.ficha)}">${e.label}</span>${e.manual && e.ficha !== 'cardio' ? '<span class="mtag">manual</span>' : ''}${e.completo === false ? '<span class="mtag inc">incompleto</span>' : ''}<span class="meta">${fmtHour(e.startedAt)} às ${fmtHour(e.finishedAt)} · ${fmtDur(e.finishedAt - e.startedAt)}</span>
-          <button class="del" data-del="${e.id}">Remover</button></div>
+          <button class="del" data-edit="${e.id}">Editar horário</button><button class="del" data-del="${e.id}" style="margin-left:0">Remover</button></div>
+        ${editing === e.id ? `<div class="mform"><div class="mrow">
+            <label><span class="lab">Início</span><input type="time" id="eIni" value="${fmtHour(e.startedAt)}"></label>
+            <label><span class="lab">Fim</span><input type="time" id="eFim" value="${fmtHour(e.finishedAt)}"></label></div>
+            <div class="mbtns"><button data-act="ecancel">Cancelar</button><button class="pri" data-act="esave" data-id="${e.id}">Salvar horário</button></div></div>` : ''}
         <p class="msg">${e.ficha === 'cardio' ? esc(e.desc || '') : e.msg}</p>
         ${e.nota ? `<p class="nota">${esc(e.nota)}</p>` : ''}
         ${exs(e).length ? `<div class="meta">${exs(e).length} exercícios · ${e.feitas != null ? `${e.feitas} de ${e.series}` : e.series} séries${e.grupos ? ' · ' + e.grupos : ''}</div>
@@ -1109,7 +1143,8 @@ function openCalendar(focusDate){
 
   sheet.addEventListener('click', ev => {
     const b = ev.target.closest('button'); if (!b) return;
-    if (b.dataset.day){ sel = b.dataset.day; adding = false; draw(); return; }
+    if (b.dataset.day){ sel = b.dataset.day; adding = false; editing = null; draw(); return; }
+    if (b.dataset.edit){ editing = editing === b.dataset.edit ? null : b.dataset.edit; adding = false; draw(); return; }
     if (b.dataset.mf){
       mFicha = b.dataset.mf;
       sheet.querySelectorAll('.mchip').forEach(c => c.setAttribute('aria-pressed', c.dataset.mf === mFicha));
@@ -1124,6 +1159,17 @@ function openCalendar(focusDate){
     }
     const a = b.dataset.act;
     if (a === 'close') close();
+    if (a === 'ecancel'){ editing = null; draw(); }
+    if (a === 'esave'){
+      const h = loadHist(), e = h.find(x => x.id === b.dataset.id); if (!e) return;
+      const [y, mo, d] = e.date.split('-').map(Number);
+      const at = (v) => { const [hh, mm] = (v || '0:0').split(':').map(Number); return new Date(y, mo - 1, d, hh || 0, mm || 0).getTime(); };
+      const ini = at(sheet.querySelector('#eIni').value), fim = at(sheet.querySelector('#eFim').value);
+      if (fim <= ini){ toast('O fim precisa ser depois do início.'); return; }
+      e.startedAt = ini; e.finishedAt = fim; e.horarioEditado = true;
+      h.sort((p, q) => p.finishedAt - q.finishedAt);
+      if (saveHist(h)){ editing = null; draw(); toast(`Horário salvo: ${fmtHour(ini)} às ${fmtHour(fim)}.`); }
+    }
     if (a === 'add'){ adding = true; draw(); sheet.querySelector('.mform').scrollIntoView({ block:'nearest', behavior:'smooth' }); }
     if (a === 'cancel'){ adding = false; draw(); }
     if (a === 'save'){
@@ -1209,7 +1255,7 @@ function showDone(partial){
     <div class="dstats">
       <div><b class="tab">${partial ? `${exOk}/${f.exercises.length}` : f.exercises.length}</b><span>exercícios</span></div>
       <div><b class="tab">${partial ? `${t.done}/${t.all}` : t.all}</b><span>séries</span></div>
-      <div><b class="tab">${p.startedAt ? fmtDur((p.finishedAt || Date.now()) - p.startedAt) : '–'}</b><span>duração</span></div>
+      <div><b class="tab">${sessionStart(p) ? fmtDur((p.finishedAt || Date.now()) - sessionStart(p)) : '–'}</b><span>duração</span></div>
     </div>
     <div class="dbtns"><button class="btn" id="dCal">Ver no calendário</button><button class="btn ghost" id="dClose">Ver ficha</button><button class="btn ghost" id="dReset">Recomeçar</button></div>
     ${entry.saved ? `<div class="saved"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Salvo no calendário em ${fmtDay(entry.finishedAt)}</div>` : `<div class="saved" style="color:#ffb4a3">Não foi possível salvar no calendário neste navegador.</div>`}
