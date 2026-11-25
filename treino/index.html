@@ -128,7 +128,25 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--c-costas);
 .set.done{background:var(--c);color:#fff}
 .set.done::after{content:"";position:absolute;right:-6px;top:-6px;width:18px;height:18px;border-radius:50%;background:var(--surface);
   border:2px solid var(--c);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%230b7552' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-size:12px;background-repeat:no-repeat;background-position:center}
-.hint{font-size:11.5px;color:var(--muted);margin-top:-4px}
+.hint{font-size:11.5px;color:var(--muted);margin-top:6px}
+.setsrow{align-items:flex-start}
+.nsets{padding-top:10px}
+.setcol{display:flex;flex-direction:column;gap:5px;min-width:54px;width:max-content}
+.load{width:auto;align-self:stretch;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);text-align:center;
+  font:inherit;font-weight:700;font-size:15px;padding:0 2px;font-variant-numeric:tabular-nums;min-width:0}
+.load::placeholder{color:var(--muted);font-weight:500;font-size:12px}
+.load:focus{outline:2px solid var(--c);outline-offset:1px;background:var(--surface)}
+.finish{height:46px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--ink)}
+.finish svg{width:18px;height:18px}
+.dex{display:grid;gap:8px;margin-top:8px}
+.dexi b{color:var(--ink);font-size:13px}
+.dexi small{margin-left:6px;font-weight:700;color:#c2410c}
+.dskip{font-size:12.5px;color:var(--muted);line-height:1.45}
+.dskip b{color:#c2410c}
+.dsets{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.dsets span{border:1px solid var(--line);border-radius:6px;padding:2px 7px;font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums}
+.dsets span.no{color:var(--muted);text-decoration:line-through;opacity:.7}
+.mtag.inc{color:#c2410c;border-color:currentColor}
 
 .foot{display:flex;gap:12px;align-items:center;border-top:1px solid var(--line);padding-top:12px}
 .mus{flex:1;min-width:0;font-size:13px;line-height:1.4}
@@ -147,6 +165,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--c-costas);
 @media (min-width:760px){
   .cbody{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);grid-template-areas:"head photos" "sets photos" "foot photos";gap:14px 22px;padding:18px 20px}
   .head{grid-area:head}.photos{grid-area:photos;align-self:start}.setsblk{grid-area:sets}.foot{grid-area:foot;align-self:end}
+  .finish{grid-column:1/-1}
   .map svg{width:64px;height:128px}
   .card{min-height:0}
 }
@@ -425,6 +444,23 @@ function load(){
 }
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
 
+// Última carga anotada por exercício (não zera com o treino).
+const LKEY = 'ficha-treino-cargas-v1';
+let LAST = {};
+try { LAST = JSON.parse(localStorage.getItem(LKEY)) || {}; } catch(e){ LAST = {}; }
+const saveLast = () => { try { localStorage.setItem(LKEY, JSON.stringify(LAST)); } catch(e){} };
+const lkey = (i) => `${S.ficha}|${F().exercises[i].name}`;
+function loadsArr(i){
+  const p = P(), n = F().exercises[i].reps.length;
+  if (!p.loads) p.loads = {};
+  if (!p.loads[i]){
+    const last = LAST[lkey(i)];
+    p.loads[i] = Array.from({ length:n }, (_, j) => (last && last.v[j]) || '');
+  }
+  return p.loads[i];
+}
+const fmtKg = (v) => v ? `${String(v).replace('.', ',')} kg` : '—';
+
 const F  = () => FICHAS[S.ficha];
 const P  = () => S.prog[S.ficha];
 const doneArr = (i) => { const p = P(); if (!p.done[i]) p.done[i] = F().exercises[i].reps.map(() => false); return p.done[i]; };
@@ -490,8 +526,11 @@ function cardHTML(e, i){
   const posInSec = inSec.indexOf(e) + 1;
   const d = doneArr(i);
   const nextJ = d.indexOf(false);
+  const L = loadsArr(i);
+  const last = LAST[lkey(i)];
   const sets = e.reps.map((r, j) =>
-    `<button class="set${d[j]?' done':''}${j===nextJ?' next':''}" data-ex="${i}" data-set="${j}" aria-pressed="${d[j]}" aria-label="Série ${j+1}: ${r} repetições${d[j]?', feita':''}">${r}</button>`).join('');
+    `<div class="setcol"><button class="set${d[j]?' done':''}${j===nextJ?' next':''}" data-ex="${i}" data-set="${j}" aria-pressed="${d[j]}" aria-label="Série ${j+1}: ${r} repetições${d[j]?', feita':''}">${r}</button>
+      <input class="load" data-ex="${i}" data-set="${j}" value="${esc(L[j] || '')}" inputmode="decimal" enterkeyhint="done" maxlength="6" size="1" placeholder="kg" aria-label="Carga da série ${j+1} em kg"></div>`).join('');
   return `<section class="slide" aria-roledescription="exercício" aria-label="${i+1} de ${f.exercises.length}: ${e.name}">
   <article class="card" style="--c:${sec.color}">
     <div class="band"><b>${sec.label}</b><span>${inSec.length} exercício${inSec.length>1?'s':''} · ${secSets} séries</span><em>${posInSec}/${inSec.length}</em></div>
@@ -506,11 +545,13 @@ function cardHTML(e, i){
           <div class="nsets"><b>${e.reps.length}</b><span>séries<br>de</span></div>
           <div class="sets">${sets}</div>
         </div>
+        <div class="hint">Carga em kg${last && last.at ? ` · última anotação em ${fmtDay(last.at)}` : ' · anote abaixo de cada série'}</div>
       </div>
       <div class="foot">
         <div class="mus"><b>${e.main}</b>${e.second ? ` <span>· Sec.: ${e.second}</span>` : ''}</div>
         <div class="map">${figure('front', e)}${figure('back', e)}</div>
       </div>
+      <button class="finish" data-finish><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>Finalizar treino</button>
     </div>
   </article></section>`;
 }
@@ -636,13 +677,17 @@ function toggleSet(i, j){
   save();
   updateCard(i); renderHeader(); renderProgress();
 
-  if (!d[j]){ p.finishedAt = null; save(); renderNav(); return; }
-
   const t = totals();
+  if (p.closed && t.done < t.all){
+    // Treino já finalizado antes do fim: mantém o calendário atualizado.
+    p.finishedAt = Date.now(); save(); recordWorkout();
+  }
+  if (!d[j]){ if (!p.closed) p.finishedAt = null; save(); renderNav(); return; }
+
   if (t.done === t.all){
-    p.finishedAt = Date.now(); save();
+    p.finishedAt = Date.now(); p.closed = true; save();
     stopRest();
-    setTimeout(showDone, 450);
+    setTimeout(() => showDone(false), 450);
     return;
   }
   askNotifyOnce();
@@ -654,8 +699,32 @@ function toggleSet(i, j){
   renderNav();
 }
 
+function confirmFinish(){
+  const t = totals();
+  if (!t.done){ toast('Marque pelo menos uma série antes de finalizar.'); return; }
+  const f = F();
+  const exOk = f.exercises.filter((_, i) => exDone(i)).length;
+  const m = document.createElement('div');
+  m.className = 'menu';
+  m.innerHTML = `<div class="sheet" role="dialog" aria-label="Finalizar treino">
+    <h3>Finalizar treino?</h3>
+    <p>Você fez ${t.done} de ${t.all} séries (${exOk} de ${f.exercises.length} exercícios completos). O treino vai para o calendário com os exercícios incompletos marcados e as cargas anotadas.</p>
+    <div class="mbtns" style="margin-top:8px"><button id="fNo">Continuar treinando</button><button class="pri" id="fYes">Finalizar</button></div>
+  </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', ev => { if (ev.target === m) m.remove(); });
+  m.querySelector('#fNo').onclick = () => m.remove();
+  m.querySelector('#fYes').onclick = () => {
+    m.remove();
+    const p = P();
+    p.finishedAt = Date.now(); p.closed = true; save();
+    stopRest();
+    showDone(t.done < t.all);
+  };
+}
+
 /* ---------------- Cronômetro de descanso ---------------- */
-let tickTimer = null, endedTimer = null;
+let tickTimer = null, endedTimer = null, lastPip = null;
 
 function nextLabel(){
   const nx = nextPending(); if (!nx) return '';
@@ -672,6 +741,7 @@ function shortNext(){
 }
 
 function startRest(){
+  lastPip = null;
   S.restEnd = Date.now() + REST_SECONDS * 1000;
   S.restFicha = S.ficha;
   save();
@@ -682,6 +752,7 @@ function startRest(){
 function addRest(sec){
   if (!S.restEnd) return;
   S.restEnd = Math.max(Date.now() + 5000, S.restEnd + sec * 1000);
+  lastPip = null;
   save(); scheduleNotification(); tick();
 }
 function stopRest(){
@@ -722,6 +793,10 @@ function tick(){
   if (fg) fg.style.strokeDashoffset = C * (1 - left / tot);
   if (rs) rs.textContent = sec;
   document.title = `${sec}s · Descanso`;
+  if (sec <= 3 && sec !== lastPip && document.visibilityState === 'visible'){
+    lastPip = sec; pip();
+    if (navigator.vibrate) navigator.vibrate(180);
+  }
 }
 
 function restEnded(){
@@ -730,8 +805,7 @@ function restEnded(){
   clearInterval(tickTimer); tickTimer = null;
   document.title = 'Ficha de Treino';
   if (document.visibilityState === 'visible'){
-    beep();
-    if (navigator.vibrate) navigator.vibrate([300, 120, 300, 120, 300]);
+    alarm();
   } else {
     pageNotify(label); // reserva, caso o service worker não esteja ativo
   }
@@ -750,27 +824,60 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-/* ---------------- Som ---------------- */
-let actx = null;
+/* ---------------- Som e vibração ---------------- */
+// Web Audio em sessão "ambient": o bipe toca por cima da música sem pausar o player.
+let actx = null, master = null;
+const VIBRA = [700, 150, 700, 150, 700, 150, 1100];
 function unlockAudio(){
   try {
-    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (navigator.audioSession) navigator.audioSession.type = 'ambient';
+    if (!actx){
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      const comp = actx.createDynamicsCompressor();
+      comp.threshold.value = -18; comp.knee.value = 6; comp.ratio.value = 8; comp.attack.value = .002; comp.release.value = .15;
+      master = actx.createGain(); master.gain.value = 1.6;
+      master.connect(comp).connect(actx.destination);
+    }
     if (actx.state === 'suspended') actx.resume();
   } catch(e){}
 }
+function tone(t, freq, len, vol, type){
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = type || 'square'; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + .01);
+  g.gain.setValueAtTime(vol, t + len - .03);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  o.connect(g).connect(master);
+  o.start(t); o.stop(t + len + .02);
+}
+function pip(){
+  if (!actx) return;
+  if (actx.state === 'suspended') actx.resume();
+  tone(actx.currentTime + .01, 1400, .09, .5);
+}
 function beep(){
   if (!actx) return;
-  const t0 = actx.currentTime;
-  [0, .28, .56].forEach((dt, k) => {
-    const o = actx.createOscillator(), g = actx.createGain();
-    o.type = 'sine'; o.frequency.value = k === 2 ? 1320 : 880;
-    g.gain.setValueAtTime(0.0001, t0 + dt);
-    g.gain.exponentialRampToValueAtTime(0.35, t0 + dt + .02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + .22);
-    o.connect(g).connect(actx.destination);
-    o.start(t0 + dt); o.stop(t0 + dt + .25);
-  });
+  if (actx.state === 'suspended') actx.resume();
+  const t0 = actx.currentTime + .02;
+  // três toques duplos agudos (cortam o barulho da academia), cerca de 1,7 s
+  [0, .55, 1.1].forEach(dt => { tone(t0 + dt, 2100, .16, .9); tone(t0 + dt + .2, 2600, .2, .9); });
 }
+function alarm(){
+  beep();
+  if (navigator.vibrate) navigator.vibrate(VIBRA);
+}
+
+// Tela ligada durante o treino (opcional): com o app aberto o alerta forte sempre toca.
+let wakeLock = null;
+async function applyWake(){
+  try {
+    if (S.wake && document.visibilityState === 'visible' && 'wakeLock' in navigator){
+      if (!wakeLock){ wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); }
+    } else if (wakeLock){ await wakeLock.release(); wakeLock = null; }
+  } catch(e){ wakeLock = null; }
+}
+document.addEventListener('visibilitychange', applyWake);
 
 /* ---------------- Notificações (service worker) ---------------- */
 let swReg = null;
@@ -830,7 +937,9 @@ function openMenu(){
     <h3>Opções</h3>
     <div class="row"><div><label>Notificações</label><p id="ntxt">${notifText()}</p></div>
       ${st === 'default' ? '<button class="btn2" id="nOn">Ativar</button>' : st === 'granted' ? '<button class="btn2" id="nTest">Testar</button>' : ''}</div>
-    <div class="row"><div><label>Descanso</label><p>${REST_SECONDS} segundos após cada série marcada.</p></div></div>
+    <div class="row"><div><label>Descanso</label><p>${REST_SECONDS} segundos após cada série marcada, com bipes nos 3 últimos segundos.</p></div></div>
+    <div class="row"><div><label>Alerta do fim do descanso</label><p>Bipe agudo e vibração longa. Toca por cima da música sem pausar.</p></div><button class="btn2" id="aTest">Testar</button></div>
+    ${'wakeLock' in navigator ? `<div class="row"><div><label>Manter tela ligada</label><p>Com o app aberto na tela, o alerta forte sempre funciona. Gasta mais bateria.</p></div><button class="btn2" id="wk" aria-pressed="${!!S.wake}">${S.wake ? 'Ligado' : 'Desligado'}</button></div>` : ''}
     <div class="row"><div><label>Zerar ficha de ${F().label.toLowerCase()}</label><p>Desmarca todas as séries.</p></div><button class="btn2 warn" id="rst">Zerar</button></div>
     <p class="src">Fotos: free-exercise-db (Unlicense, domínio público). Os treinos concluídos ficam no calendário (ícone ao lado do sino). Toque numa série para marcar; toque de novo para desmarcar. O progresso fica salvo neste aparelho e reinicia sozinho depois de 10 horas sem uso.</p>
     <div class="row" style="border:0;padding-bottom:0"><span></span><button class="btn2" id="cls">Fechar</button></div>
@@ -847,6 +956,9 @@ function openMenu(){
     else { try { new Notification('Teste de notificação', { body:'Funcionando.' }); } catch(e){ toast('Não foi possível mostrar a notificação.'); } }
     close();
   };
+  m.querySelector('#aTest').onclick = () => { unlockAudio(); alarm(); };
+  const wk = m.querySelector('#wk');
+  if (wk) wk.onclick = () => { S.wake = !S.wake; save(); applyWake(); wk.textContent = S.wake ? 'Ligado' : 'Desligado'; wk.setAttribute('aria-pressed', S.wake); toast(S.wake ? 'A tela fica ligada enquanto o app estiver aberto.' : 'Tela volta a apagar normalmente.'); };
   let armed = false;
   const rst = m.querySelector('#rst');
   rst.onclick = () => {
@@ -876,6 +988,7 @@ function recordWorkout(){
   const p = P(), f = F(), t = totals();
   const fin = p.finishedAt || Date.now();
   const start = p.startedAt || fin;
+  const completo = t.done === t.all;
   const entry = {
     id: `${S.ficha}-${start}`,
     date: dayKey(fin),
@@ -884,9 +997,14 @@ function recordWorkout(){
     grupos: [...new Set(f.exercises.map(e => SECTIONS[e.sec].label))].join(' · '),
     exercicios: f.exercises.map(e => e.name),
     series: t.all,
+    feitas: t.done,
+    completo,
+    detalhes: f.exercises.map((e, i) => ({ nome:e.name, reps:e.reps.slice(), feitas:doneArr(i).slice(), cargas:loadsArr(i).slice() })),
     startedAt: start,
     finishedAt: fin,
-    msg: `Parabéns! Você terminou a ficha de ${f.label.toLowerCase()}. Todas as séries feitas.`
+    msg: completo
+      ? `Parabéns! Você terminou a ficha de ${f.label.toLowerCase()}. Todas as séries feitas.`
+      : `Treino de ${f.label.toLowerCase()} finalizado com ${t.done} de ${t.all} séries.`
   };
   const h = loadHist();
   const i = h.findIndex(e => e.id === entry.id);
@@ -896,6 +1014,17 @@ function recordWorkout(){
   // Pede ao navegador para não apagar estes dados quando faltar espaço.
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
   return entry;
+}
+
+function detalhesHTML(e){
+  const feitos = e.detalhes.filter(x => x.feitas.some(Boolean));
+  const pulados = e.detalhes.filter(x => !x.feitas.some(Boolean));
+  return `<details><summary>Exercícios e cargas</summary><div class="dex">${feitos.map(x => {
+    const n = x.feitas.filter(Boolean).length;
+    const inc = n < x.reps.length;
+    return `<div class="dexi"><b>${esc(x.nome)}</b>${inc ? `<small>incompleto · ${n} de ${x.reps.length}</small>` : ''}
+      <div class="dsets">${x.reps.map((r, j) => `<span class="${x.feitas[j] ? '' : 'no'}">${r} × ${esc(fmtKg(x.cargas && x.cargas[j]))}</span>`).join('')}</div></div>`;
+  }).join('')}${pulados.length ? `<div class="dskip"><b>Não feitos:</b> ${pulados.map(x => esc(x.nome)).join(', ')}</div>` : ''}</div></details>`;
 }
 
 function openCalendar(focusDate){
@@ -934,12 +1063,12 @@ function openCalendar(focusDate){
     const wdName = new Date(sy, sm - 1, sd).toLocaleDateString('pt-BR', { weekday:'long' });
     const exs = (e) => e.exercicios || [];
     let det = selEs.length ? selEs.map(e => `<div class="entry">
-        <div class="top2"><span class="tag" style="--c:${fichaColor(e.ficha)}">${e.label}</span>${e.manual && e.ficha !== 'cardio' ? '<span class="mtag">manual</span>' : ''}<span class="meta">${fmtHour(e.startedAt)} às ${fmtHour(e.finishedAt)} · ${fmtDur(e.finishedAt - e.startedAt)}</span>
+        <div class="top2"><span class="tag" style="--c:${fichaColor(e.ficha)}">${e.label}</span>${e.manual && e.ficha !== 'cardio' ? '<span class="mtag">manual</span>' : ''}${e.completo === false ? '<span class="mtag inc">incompleto</span>' : ''}<span class="meta">${fmtHour(e.startedAt)} às ${fmtHour(e.finishedAt)} · ${fmtDur(e.finishedAt - e.startedAt)}</span>
           <button class="del" data-del="${e.id}">Remover</button></div>
         <p class="msg">${e.ficha === 'cardio' ? esc(e.desc || '') : e.msg}</p>
         ${e.nota ? `<p class="nota">${esc(e.nota)}</p>` : ''}
-        ${exs(e).length ? `<div class="meta">${exs(e).length} exercícios · ${e.series} séries${e.grupos ? ' · ' + e.grupos : ''}</div>
-        <details><summary>Exercícios</summary><ol>${exs(e).map(x => `<li>${x}</li>`).join('')}</ol></details>` : ''}
+        ${exs(e).length ? `<div class="meta">${exs(e).length} exercícios · ${e.feitas != null ? `${e.feitas} de ${e.series}` : e.series} séries${e.grupos ? ' · ' + e.grupos : ''}</div>
+        ${e.detalhes ? detalhesHTML(e) : `<details><summary>Exercícios</summary><ol>${exs(e).map(x => `<li>${x}</li>`).join('')}</ol></details>`}` : ''}
       </div>`).join('')
       : (adding ? '' : `<p class="nowk">Nenhum treino registrado neste dia.</p>`);
     if (adding){
@@ -1067,27 +1196,28 @@ function fmtDur(ms){
   const m = Math.max(1, Math.round(ms / 60000));
   return m >= 60 ? `${Math.floor(m/60)}h${String(m%60).padStart(2,'0')}` : `${m} min`;
 }
-function showDone(){
+function showDone(partial){
   const p = P(), t = totals(), f = F();
   const entry = recordWorkout();
+  const exOk = f.exercises.filter((_, i) => exDone(i)).length;
   const ov = document.createElement('div');
   ov.className = 'done-ov';
   ov.innerHTML = `<canvas></canvas><div class="done-in">
     <svg class="trophy" viewBox="0 0 24 24" fill="currentColor"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3V3zm0 4H6v1a2 2 0 0 0 1 1.7V7zm10 0v2.7A2 2 0 0 0 18 8V7h-1z"/></svg>
-    <h2>Parabéns!</h2>
-    <p>${entry.msg.replace(/^Parabéns! /, '')}</p>
+    <h2>${partial ? 'Treino finalizado' : 'Parabéns!'}</h2>
+    <p>${partial ? entry.msg + ' Os exercícios incompletos ficaram marcados no calendário.' : entry.msg.replace(/^Parabéns! /, '')}</p>
     <div class="dstats">
-      <div><b class="tab">${f.exercises.length}</b><span>exercícios</span></div>
-      <div><b class="tab">${t.all}</b><span>séries</span></div>
+      <div><b class="tab">${partial ? `${exOk}/${f.exercises.length}` : f.exercises.length}</b><span>exercícios</span></div>
+      <div><b class="tab">${partial ? `${t.done}/${t.all}` : t.all}</b><span>séries</span></div>
       <div><b class="tab">${p.startedAt ? fmtDur((p.finishedAt || Date.now()) - p.startedAt) : '–'}</b><span>duração</span></div>
     </div>
     <div class="dbtns"><button class="btn" id="dCal">Ver no calendário</button><button class="btn ghost" id="dClose">Ver ficha</button><button class="btn ghost" id="dReset">Recomeçar</button></div>
     ${entry.saved ? `<div class="saved"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Salvo no calendário em ${fmtDay(entry.finishedAt)}</div>` : `<div class="saved" style="color:#ffb4a3">Não foi possível salvar no calendário neste navegador.</div>`}
   </div>`;
   document.body.appendChild(ov);
-  if (navigator.vibrate) navigator.vibrate([80, 60, 80, 60, 200]);
-  beep();
-  const stop = confetti(ov.querySelector('canvas'));
+  if (partial){ ov.querySelector('.trophy').innerHTML = '<path d="M5 21V4h11l-2 4 2 4H7v9z"/>'; }
+  else { if (navigator.vibrate) navigator.vibrate([80, 60, 80, 60, 200]); beep(); }
+  const stop = partial ? () => {} : confetti(ov.querySelector('canvas'));
   ov.querySelector('#dClose').onclick = () => { stop(); ov.remove(); };
   ov.querySelector('#dCal').onclick = () => { stop(); ov.remove(); openCalendar(entry.date); };
   ov.querySelector('#dReset').onclick = () => { stop(); ov.remove(); S.prog[S.ficha] = freshProgress(); save(); renderAll(); };
@@ -1123,6 +1253,7 @@ function toast(msg){
 document.addEventListener('click', ev => {
   const set = ev.target.closest('.set');
   if (set){ toggleSet(+set.dataset.ex, +set.dataset.set); return; }
+  if (ev.target.closest('[data-finish]')){ confirmFinish(); return; }
   const chip = ev.target.closest('.chip');
   if (chip){ S.ficha = chip.dataset.ficha; save(); renderAll(); return; }
   const seg = ev.target.closest('.seg');
@@ -1134,12 +1265,40 @@ document.addEventListener('click', ev => {
     lb.onclick = () => lb.remove(); document.body.appendChild(lb); return;
   }
 });
+// Carga por série: salva no treino atual e como "última carga" do exercício.
+document.addEventListener('input', ev => {
+  const inp = ev.target.closest('.load'); if (!inp) return;
+  const clean = inp.value.replace(/[^0-9.,]/g, '').slice(0, 6);
+  if (clean !== inp.value) inp.value = clean;
+  const i = +inp.dataset.ex, j = +inp.dataset.set;
+  loadsArr(i)[j] = clean;
+  const k = lkey(i);
+  const n = F().exercises[i].reps.length;
+  const cur = LAST[k] || { v:Array(n).fill('') };
+  cur.v[j] = clean; cur.at = Date.now();
+  LAST[k] = cur;
+  save(); saveLast();
+  if (P().closed) recordWorkout();
+});
+// Ao terminar de digitar, repete a carga nas séries seguintes que estão vazias.
+document.addEventListener('change', ev => {
+  const inp = ev.target.closest('.load'); if (!inp || !inp.value) return;
+  const i = +inp.dataset.ex, j = +inp.dataset.set, L = loadsArr(i);
+  const k = lkey(i);
+  inp.closest('.sets').querySelectorAll('.load').forEach((o, jj) => {
+    if (jj > j && !o.value){ o.value = inp.value; L[jj] = inp.value; LAST[k].v[jj] = inp.value; }
+  });
+  save(); saveLast();
+});
+document.addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.closest('.load')) ev.target.blur(); });
+
 $('prev').onclick = () => go(P().idx - 1);
 $('next').onclick = () => go(P().idx + 1);
 $('menuBtn').onclick = openMenu;
 $('calBtn').onclick = () => openCalendar();
 document.addEventListener('keydown', ev => {
   if (document.querySelector('.menu,.lb,.done-ov')) { if (ev.key === 'Escape') document.querySelector('.menu,.lb')?.remove(); return; }
+  if (ev.target.closest && ev.target.closest('input,textarea')) return;
   if (ev.key === 'ArrowLeft') go(P().idx - 1);
   if (ev.key === 'ArrowRight') go(P().idx + 1);
 });
@@ -1158,6 +1317,7 @@ S = load();
 save();
 renderAll();
 updateBell();
+applyWake();
 if (S.restEnd && S.restEnd <= Date.now()){ S.restEnd = null; S.restFicha = null; save(); $('restbar').hidden = true; }
 })();
 </script>

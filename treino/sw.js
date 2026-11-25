@@ -1,7 +1,7 @@
 /* Service worker da Ficha de Treino.
    1) Agenda a notificação de fim do descanso, que aparece mesmo com o app em segundo plano.
    2) Guarda o app e as fotos em cache para abrir sem internet na academia. */
-const CACHE = 'ficha-treino-v4';
+const CACHE = 'ficha-treino-v5';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -56,8 +56,9 @@ async function show(d) {
     body: d.body || 'Hora da próxima série',
     tag: 'descanso',
     renotify: true,
-    requireInteraction: false,
-    vibrate: [300, 120, 300, 120, 300],
+    requireInteraction: true,
+    silent: false,
+    vibrate: [700, 150, 700, 150, 700, 150, 1100],
     icon: 'icon-192.png',
     badge: 'icon-192.png',
     data: { url: self.registration.scope }
