@@ -293,7 +293,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--c-costas);
 
 /* ---------- Menu ---------- */
 .menu{position:fixed;inset:0;z-index:45;background:rgba(3,8,14,.5);display:flex;align-items:flex-end;justify-content:center}
-.sheet{background:var(--surface);width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:18px var(--gr) calc(18px + var(--sab)) var(--gl);display:grid;gap:10px}
+.sheet{background:var(--surface);width:100%;max-width:520px;max-height:92%;overflow-y:auto;border-radius:16px 16px 0 0;padding:18px var(--gr) calc(18px + var(--sab)) var(--gl);display:grid;gap:10px}
 .sheet h3{margin:0 0 4px;font-family:var(--f-display);font-size:18px}
 .sheet p{margin:0;color:var(--muted);font-size:13px;line-height:1.45}
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
@@ -822,8 +822,8 @@ function tick(){
   if (rs) rs.textContent = sec;
   document.title = `${sec}s · Descanso`;
   if (sec <= 3 && sec !== lastPip && document.visibilityState === 'visible'){
-    lastPip = sec; pip();
-    if (navigator.vibrate) navigator.vibrate(180);
+    lastPip = sec;
+    if (navigator.vibrate) navigator.vibrate(150);
   }
 }
 
@@ -856,41 +856,36 @@ document.addEventListener('visibilitychange', () => {
 /* ---------------- Som e vibração ---------------- */
 // Web Audio em sessão "ambient": o bipe toca por cima da música sem pausar o player.
 let actx = null, master = null;
-const VIBRA = [700, 150, 700, 150, 700, 150, 1100];
+const VIBRA = [1200, 200, 1200, 200, 1200, 200, 1500]; // cerca de 6 s
+const repCount = () => [1, 3, 5].includes(S.rep) ? S.rep : 3;
 function unlockAudio(){
   try {
     if (navigator.audioSession) navigator.audioSession.type = 'ambient';
     if (!actx){
       actx = new (window.AudioContext || window.webkitAudioContext)();
-      const comp = actx.createDynamicsCompressor();
-      comp.threshold.value = -18; comp.knee.value = 6; comp.ratio.value = 8; comp.attack.value = .002; comp.release.value = .15;
-      master = actx.createGain(); master.gain.value = 1.6;
-      master.connect(comp).connect(actx.destination);
+      master = actx.createGain(); master.gain.value = 1;
+      master.connect(actx.destination);
     }
     if (actx.state === 'suspended') actx.resume();
   } catch(e){}
 }
-function tone(t, freq, len, vol, type){
+// Sino suave: senoide grave com ataque macio e decaimento curto.
+function bell(t, freq, len, vol){
   const o = actx.createOscillator(), g = actx.createGain();
-  o.type = type || 'square'; o.frequency.value = freq;
+  o.type = 'sine'; o.frequency.value = freq;
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(vol, t + .01);
-  g.gain.setValueAtTime(vol, t + len - .03);
+  g.gain.exponentialRampToValueAtTime(vol, t + .02);
   g.gain.exponentialRampToValueAtTime(0.0001, t + len);
   o.connect(g).connect(master);
-  o.start(t); o.stop(t + len + .02);
-}
-function pip(){
-  if (!actx) return;
-  if (actx.state === 'suspended') actx.resume();
-  tone(actx.currentTime + .01, 1400, .09, .5);
+  o.start(t); o.stop(t + len + .05);
 }
 function beep(){
-  if (!actx) return;
+  if (!actx || S.sound === false) return;
   if (actx.state === 'suspended') actx.resume();
   const t0 = actx.currentTime + .02;
-  // três toques duplos agudos (cortam o barulho da academia), cerca de 1,7 s
-  [0, .55, 1.1].forEach(dt => { tone(t0 + dt, 2100, .16, .9); tone(t0 + dt + .2, 2600, .2, .9); });
+  // duas notas graves (dó e sol), cerca de 0,6 s no total
+  bell(t0, 523, .35, .3);
+  bell(t0 + .18, 392, .45, .3);
 }
 function alarm(){
   beep();
@@ -927,7 +922,7 @@ function postSW(msg){
 }
 function scheduleNotification(){
   if (notifState() !== 'granted') return;
-  postSW({ type:'schedule', at:S.restEnd, title:'Descanso encerrado', body: nextLabel() ? 'Próximo: ' + nextLabel() : 'Hora da próxima série' });
+  postSW({ type:'schedule', at:S.restEnd, repeat:repCount(), title:'Descanso encerrado', body: nextLabel() ? 'Próximo: ' + nextLabel() : 'Hora da próxima série' });
 }
 function cancelNotification(){ postSW({ type:'cancel' }); }
 function pageNotify(label){
@@ -966,11 +961,14 @@ function openMenu(){
     <h3>Opções</h3>
     <div class="row"><div><label>Notificações</label><p id="ntxt">${notifText()}</p></div>
       ${st === 'default' ? '<button class="btn2" id="nOn">Ativar</button>' : st === 'granted' ? '<button class="btn2" id="nTest">Testar</button>' : ''}</div>
-    <div class="row"><div><label>Descanso</label><p>${REST_SECONDS} segundos após cada série marcada, com bipes nos 3 últimos segundos.</p></div></div>
-    <div class="row"><div><label>Alerta do fim do descanso</label><p>Bipe agudo e vibração longa. Toca por cima da música sem pausar.</p></div><button class="btn2" id="aTest">Testar</button></div>
+    <div class="row"><div><label>Descanso</label><p>${REST_SECONDS} segundos após cada série marcada, com vibração curta nos 3 últimos segundos.</p></div></div>
+    <div class="row"><div><label>Alerta com o app aberto</label><p>Vibração de cerca de 6 s e um sino curto e grave, que toca por cima da música.</p></div><button class="btn2" id="aTest">Testar</button></div>
+    <div class="row"><div><label>Som do sino</label><p>Desligue para ficar só com a vibração.</p></div><button class="btn2" id="snd" aria-pressed="${S.sound !== false}">${S.sound !== false ? 'Ligado' : 'Desligado'}</button></div>
+    <div class="row" style="flex-wrap:wrap"><div style="flex:1 1 100%"><label>Celular bloqueado ou app fechado</label><p>A notificação se repete para a vibração durar mais. Para ao abrir o app ou tocar no aviso.</p></div>
+      <div class="mchips" style="flex-wrap:nowrap">${[1, 3, 5].map(n => `<button class="btn2" data-rep="${n}" aria-pressed="${repCount() === n}" style="${repCount() === n ? 'background:var(--ink);color:var(--surface)' : ''}">${n}×</button>`).join('')}</div></div>
     ${'wakeLock' in navigator ? `<div class="row"><div><label>Manter tela ligada</label><p>Com o app aberto na tela, o alerta forte sempre funciona. Gasta mais bateria.</p></div><button class="btn2" id="wk" aria-pressed="${!!S.wake}">${S.wake ? 'Ligado' : 'Desligado'}</button></div>` : ''}
     <div class="row"><div><label>Zerar ficha de ${F().label.toLowerCase()}</label><p>Desmarca todas as séries.</p></div><button class="btn2 warn" id="rst">Zerar</button></div>
-    <p class="src">Fotos: free-exercise-db (Unlicense, domínio público). Os treinos concluídos ficam no calendário (ícone ao lado do sino). Toque numa série para marcar; toque de novo para desmarcar. O progresso fica salvo neste aparelho e reinicia sozinho depois de 10 horas sem uso.</p>
+    <p class="src">Fotos: free-exercise-db (Unlicense, domínio público). Os treinos concluídos ficam no calendário (ícone ao lado do sino). Toque numa série para marcar; toque de novo para desmarcar. O progresso fica salvo neste aparelho e reinicia sozinho depois de 3 horas sem marcar séries.</p>
     <div class="row" style="border:0;padding-bottom:0"><span></span><button class="btn2" id="cls">Fechar</button></div>
   </div>`;
   document.body.appendChild(m);
@@ -981,11 +979,19 @@ function openMenu(){
   if (on) on.onclick = () => { asked = true; Notification.requestPermission().then(() => { updateBell(); close(); openMenu(); }); };
   const test = m.querySelector('#nTest');
   if (test) test.onclick = () => {
-    if (swReg) { postSW({ type:'schedule', at: Date.now() + 5000, title:'Teste de notificação', body:'Se isto apareceu, o aviso do descanso vai funcionar.', force:true }); toast('Teste em 5 s. Saia do app para ver na barra de notificações.'); }
+    if (swReg) { postSW({ type:'schedule', at: Date.now() + 5000, repeat:repCount(), title:'Teste de notificação', body:'Se isto apareceu, o aviso do descanso vai funcionar.', force:true }); toast('Teste em 5 s. Saia do app para ver na barra de notificações.'); }
     else { try { new Notification('Teste de notificação', { body:'Funcionando.' }); } catch(e){ toast('Não foi possível mostrar a notificação.'); } }
     close();
   };
   m.querySelector('#aTest').onclick = () => { unlockAudio(); alarm(); };
+  const snd = m.querySelector('#snd');
+  snd.onclick = () => { S.sound = S.sound === false; save(); snd.textContent = S.sound ? 'Ligado' : 'Desligado'; snd.setAttribute('aria-pressed', S.sound); };
+  m.querySelectorAll('[data-rep]').forEach(b => b.onclick = () => {
+    S.rep = +b.dataset.rep; save();
+    m.querySelectorAll('[data-rep]').forEach(x => { const on = +x.dataset.rep === S.rep; x.setAttribute('aria-pressed', on); x.style.cssText = on ? 'background:var(--ink);color:var(--surface)' : ''; });
+    if (S.restEnd) scheduleNotification();
+    toast(`O aviso vai vibrar ${S.rep === 1 ? '1 vez' : S.rep + ' vezes'} com o celular bloqueado.`);
+  });
   const wk = m.querySelector('#wk');
   if (wk) wk.onclick = () => { S.wake = !S.wake; save(); applyWake(); wk.textContent = S.wake ? 'Ligado' : 'Desligado'; wk.setAttribute('aria-pressed', S.wake); toast(S.wake ? 'A tela fica ligada enquanto o app estiver aberto.' : 'Tela volta a apagar normalmente.'); };
   let armed = false;

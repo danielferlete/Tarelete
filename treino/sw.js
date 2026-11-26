@@ -1,7 +1,7 @@
 /* Service worker da Ficha de Treino.
    1) Agenda a notificação de fim do descanso, que aparece mesmo com o app em segundo plano.
    2) Guarda o app e as fotos em cache para abrir sem internet na academia. */
-const CACHE = 'ficha-treino-v6';
+const CACHE = 'ficha-treino-v7';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -46,28 +46,46 @@ function cancelPending() {
   if (pending) { clearTimeout(pending.timer); pending.resolve(); pending = null; }
 }
 
-async function show(d) {
-  if (!d.force) {
-    // Com o app aberto na tela, quem avisa é a própria página (som e vibração).
-    const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    if (wins.some((w) => w.visibilityState === 'visible' && w.focused)) return;
-  }
-  await self.registration.showNotification(d.title || 'Descanso encerrado', {
-    body: d.body || 'Hora da próxima série',
-    tag: 'descanso',
-    renotify: true,
-    requireInteraction: true,
-    silent: false,
-    vibrate: [700, 150, 700, 150, 700, 150, 1100],
-    icon: 'icon-192.png',
-    badge: 'icon-192.png',
-    data: { url: self.registration.scope }
-  });
+// Cada repetição do aviso (mesma tag, renotify) faz o Android vibrar de novo.
+// O Android ignora padrões de vibração enviados pelo site, então repetir é o jeito de alongar o alerta.
+const REPEAT_GAP = 2200;
+let stopRepeat = false;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function appOnScreen() {
+  const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  return wins.some((w) => w.visibilityState === 'visible' && w.focused);
 }
+
+async function show(d) {
+  if (!d.force && await appOnScreen()) return; // com o app na tela, a própria página avisa
+  stopRepeat = false;
+  const n = Math.max(1, Math.min(5, d.repeat || 3));
+  for (let k = 0; k < n; k++) {
+    if (k > 0) {
+      await sleep(REPEAT_GAP);
+      if (stopRepeat || (!d.force && await appOnScreen())) break;
+    }
+    await self.registration.showNotification(d.title || 'Descanso encerrado', {
+      body: d.body || 'Hora da próxima série',
+      tag: 'descanso',
+      renotify: true,
+      requireInteraction: true,
+      silent: false,
+      vibrate: [1200, 200, 1200, 200, 1200],
+      icon: 'icon-192.png',
+      badge: 'icon-192.png',
+      timestamp: Date.now(),
+      data: { url: self.registration.scope }
+    });
+  }
+}
+
+self.addEventListener('notificationclose', () => { stopRepeat = true; });
 
 self.addEventListener('message', (e) => {
   const d = e.data || {};
-  if (d.type === 'cancel') { cancelPending(); return; }
+  if (d.type === 'cancel') { cancelPending(); stopRepeat = true; return; }
   if (d.type !== 'schedule') return;
   cancelPending();
   const delay = Math.max(0, (d.at || 0) - Date.now());
@@ -82,6 +100,7 @@ self.addEventListener('message', (e) => {
 });
 
 self.addEventListener('notificationclick', (e) => {
+  stopRepeat = true;
   e.notification.close();
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
