@@ -29,7 +29,7 @@
   --bg:#eef2f6; --surface:#ffffff; --ink:#0f1d2e; --muted:#5b6a7c; --line:#d6dde6;
   --c-costas:#0b5a8a; --c-pant:#b4510e; --c-abd:#0b7552; --ok:#0b7552;
   --c-peito:#b4233a; --c-perna:#0d7a84; --c-bracos:#5b3a9e;
-  --c-bic:#5b3a9e; --c-tri:#8c1c3f; --c-cardio:#b85c00;
+  --c-bic:#5b3a9e; --c-tri:#8c1c3f; --c-cardio:#b85c00; --c-pernas:#a14400;
   --body-fill:#e4e9ef; --body-stroke:#c2cbd6; --photo-bg:#1b2533;
 
   --f-display:"Archivo","Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -41,7 +41,7 @@
     --bg:#08111c; --surface:#111d2b; --ink:#e7edf5; --muted:#93a3b6; --line:#233448;
     --c-costas:#3f9ade; --c-pant:#e5843f; --c-abd:#2fb585; --ok:#2fb585;
     --c-peito:#ef5d70; --c-perna:#38bdc8; --c-bracos:#a68cf0;
-    --c-bic:#a68cf0; --c-tri:#ec6a8f; --c-cardio:#f2a03d;
+    --c-bic:#a68cf0; --c-tri:#ec6a8f; --c-cardio:#f2a03d; --c-pernas:#f08a4b;
     --body-fill:#1d2b3c; --body-stroke:#33475e; --photo-bg:#050a11;
     color-scheme:dark;
   }
@@ -51,7 +51,7 @@
   --bg:#08111c; --surface:#111d2b; --ink:#e7edf5; --muted:#93a3b6; --line:#233448;
   --c-costas:#3f9ade; --c-pant:#e5843f; --c-abd:#2fb585; --ok:#2fb585;
     --c-peito:#ef5d70; --c-perna:#38bdc8; --c-bracos:#a68cf0;
-    --c-bic:#a68cf0; --c-tri:#ec6a8f; --c-cardio:#f2a03d;
+    --c-bic:#a68cf0; --c-tri:#ec6a8f; --c-cardio:#f2a03d; --c-pernas:#f08a4b;
   --body-fill:#1d2b3c; --body-stroke:#33475e; --photo-bg:#050a11;
   color-scheme:dark;
 }
@@ -344,7 +344,8 @@ const SECTIONS = {
   panturrilha: { label:'Panturrilha', color:'var(--c-pant)' },
   abdomen:     { label:'Abdômen',     color:'var(--c-abd)' },
   biceps:      { label:'Bíceps',      color:'var(--c-bic)' },
-  triceps:     { label:'Tríceps',     color:'var(--c-tri)' }
+  triceps:     { label:'Tríceps',     color:'var(--c-tri)' },
+  pernas:      { label:'Pernas',      color:'var(--c-pernas)' }
 };
 const FICHAS = {
   costas: { label:'Costas', color:'var(--c-costas)', exercises:[
@@ -366,7 +367,24 @@ const FICHAS = {
       main:'Abdominais', second:'', img:'Reverse_Crunch', p:['abs'], s:[] }
   ]},
   peito:  { label:'Peito',  color:'var(--c-peito)',  exercises:[] },
-  perna:  { label:'Perna',  color:'var(--c-perna)',  exercises:[] },
+  perna:  { label:'Perna',  color:'var(--c-perna)', sub:'Quadríceps · Posterior de coxa · Abdutores · Panturrilha', exercises:[
+    { sec:'pernas', name:'Extensor', banco:'Extensão de Pernas', equip:'máquina', reps:['12','10','8','8','6'],
+      main:'Quadríceps', second:'', img:'Leg_Extensions', p:['quads'], s:[] },
+    { sec:'pernas', name:'Flexor deitado', banco:'Cadeira Flexora', equip:'máquina', reps:['12','10','8','8','6'],
+      main:'Isquiotibiais', second:'', img:'Lying_Leg_Curls', p:['hams'], s:[] },
+    { sec:'pernas', name:'Leg horizontal', banco:'Leg Press', equip:'máquina · foto da versão 45°', reps:['12','12','12','12'],
+      main:'Quadríceps', second:'panturrilhas, glúteos, isquiotibiais', img:'Leg_Press', p:['quads'], s:['calves','glutes','hams'] },
+    { sec:'pernas', name:'Flexor sentado', banco:'Cadeira Flexora Sentada', equip:'máquina', reps:['12','12','12','12'],
+      main:'Isquiotibiais', second:'', img:'Seated_Leg_Curl', p:['hams'], s:[] },
+    { sec:'pernas', name:'Hack', banco:'Agachamento Hack', equip:'máquina', reps:['12','12','12','12'],
+      main:'Quadríceps', second:'panturrilhas, glúteos, isquiotibiais', img:'Hack_Squat', p:['quads'], s:['calves','glutes','hams'] },
+    { sec:'pernas', name:'Leg 45', banco:'Leg Press', equip:'máquina', reps:['12','10','8','8','6'],
+      main:'Quadríceps', second:'panturrilhas, glúteos, isquiotibiais', img:'Leg_Press', p:['quads'], s:['calves','glutes','hams'] },
+    { sec:'pernas', name:'Banco abdutor', banco:'Abdutor de Coxas', equip:'máquina', reps:['20','20','20','20'],
+      main:'Abdutores', second:'glúteos', img:'Thigh_Abductor', p:['abductors'], s:['glutes'] },
+    { sec:'pernas', name:'Banco sóleo', banco:'Elevação de Panturrilha Sentada', equip:'máquina', reps:['12','12','12','12'],
+      main:'Panturrilhas', second:'', img:'Seated_Calf_Raise', p:['calves'], s:[] }
+  ]},
   bracos: { label:'Braços', color:'var(--c-bracos)', exercises:[
     { sec:'biceps', name:'Rosca direta no cross, barra reta', banco:'Rosca Direta com Barra na Polia em Pé', equip:'cabo', reps:['12','10','8','8'],
       main:'Bíceps', second:'', img:'Standing_Biceps_Cable_Curl', p:['biceps'], s:[] },
@@ -397,6 +415,7 @@ const SHAPES = {
     ['b','<ellipse cx="21" cy="96" rx="3.5" ry="5"/>'], ['b','<ellipse cx="79" cy="96" rx="3.5" ry="5"/>'],
     ['b','<path d="M38 88h24l-3 11H41z"/>'],
     ['quads','<path d="M38.5 100h10.5v37c-3 2-6.5 2-9 0-2.5-12-3-25-1.5-37z"/>'], ['quads','<path d="M61.5 100H51v37c3 2 6.5 2 9 0 2.5-12 3-25 1.5-37z"/>'],
+    ['abductors','<path d="M37.6 92.5l3.2 1.2-1.8 19c-1.4-1-2.3-3-2.6-5.5-.4-5 .1-10 1.2-14.7z"/>'], ['abductors','<path d="M62.4 92.5l-3.2 1.2 1.8 19c1.4-1 2.3-3 2.6-5.5.4-5-.1-10-1.2-14.7z"/>'],
     ['b','<ellipse cx="44.5" cy="142" rx="4" ry="3.5"/>'], ['b','<ellipse cx="55.5" cy="142" rx="4" ry="3.5"/>'],
     ['calves','<path d="M40.5 147h8v26c-1.5 2-4.5 2-6 0-2-8-2.5-17-2-26z"/>'], ['calves','<path d="M59.5 147h-8v26c1.5 2 4.5 2 6 0 2-8 2.5-17 2-26z"/>'],
     ['b','<ellipse cx="44.5" cy="179" rx="4.5" ry="3"/>'], ['b','<ellipse cx="55.5" cy="179" rx="4.5" ry="3"/>']
@@ -517,7 +536,7 @@ function renderPicker(){
 function renderHeader(){
   const f = F();
   const secs = [...new Set(f.exercises.map(e => SECTIONS[e.sec].label))];
-  $('sub').textContent = f.cardio ? 'Registro livre' : secs.length ? secs.join(' · ') : f.label;
+  $('sub').textContent = f.cardio ? 'Registro livre' : f.sub || (secs.length ? secs.join(' · ') : f.label);
   if (f.cardio){
     const mk = dayKey(Date.now()).slice(0, 7);
     const n = loadHist().filter(e => e.ficha === 'cardio' && e.date.startsWith(mk)).length;
